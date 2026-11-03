@@ -1,5 +1,7 @@
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
+import { FloatingWhatsApp } from "@/components/site/whatsapp-link";
+import { generalEnquiryUrl } from "@/lib/whatsapp";
 import { getSiteSettings } from "@/server/queries/settings";
 
 // Content comes from MongoDB (cached by tag) — render per request, never at build time.
@@ -20,6 +22,7 @@ export default async function SiteLayout({ children }: Readonly<{ children: Reac
         {children}
       </main>
       <Footer settings={settings} />
+      <FloatingWhatsApp href={generalEnquiryUrl(settings)} />
     </>
   );
 }

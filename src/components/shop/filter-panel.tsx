@@ -1,76 +1,54 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
-import { categoryLabels, genderLabels, movementLabels } from "@/lib/catalog";
-import { formatPrice } from "@/lib/format";
-import {
-  categoryOptions,
-  genderOptions,
-  movementOptions,
-  type ListFilterKey,
-  type ShopFilters,
-} from "./filters";
+import { formatPrice, type CurrencyOptions } from "@/lib/format";
+import type { CatalogQuery } from "@/lib/types";
+import { useShop } from "./shop-state";
+import type { ListKey, Option, ShopOptions } from "./types";
 
-export type OptionCounts = Record<ListFilterKey, Record<string, number>>;
+export function FilterPanel({ options }: { options: ShopOptions }) {
+  const { query, navigate } = useShop();
 
-interface FilterPanelProps {
-  filters: ShopFilters;
-  brands: string[];
-  counts: OptionCounts;
-  bounds: { min: number; max: number };
-  onToggle: (key: ListFilterKey, value: string) => void;
-  onPriceCommit: (range: [number, number]) => void;
-}
+  const toggle = (key: ListKey, value: string) => {
+    const current = query[key] as string[];
+    const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
+    navigate({ [key]: next } as Partial<CatalogQuery>);
+  };
 
-export function FilterPanel({
-  filters,
-  brands,
-  counts,
-  bounds,
-  onToggle,
-  onPriceCommit,
-}: FilterPanelProps) {
   return (
     <div className="space-y-9">
+      <StockToggle checked={query.inStock} onChange={(inStock) => navigate({ inStock })} />
       <CheckboxGroup
         legend="Category"
-        name="category"
-        options={categoryOptions.map((v) => ({ value: v, label: categoryLabels[v] }))}
-        selected={filters.category}
-        counts={counts.category}
-        onToggle={(v) => onToggle("category", v)}
+        options={options.categories}
+        selected={query.category}
+        onToggle={(v) => toggle("category", v)}
       />
-      <PriceRange
-        bounds={bounds}
-        min={filters.minPrice}
-        max={filters.maxPrice}
-        onCommit={onPriceCommit}
-      />
-      <CheckboxGroup
-        legend="Brand"
-        name="brand"
-        options={brands.map((b) => ({ value: b, label: b }))}
-        selected={filters.brand}
-        counts={counts.brand}
-        onToggle={(v) => onToggle("brand", v)}
-      />
-      <CheckboxGroup
-        legend="Gender"
-        name="gender"
-        options={genderOptions.map((v) => ({ value: v, label: genderLabels[v] }))}
-        selected={filters.gender}
-        counts={counts.gender}
-        onToggle={(v) => onToggle("gender", v)}
-      />
+      {options.bounds && (
+        <PriceRange
+          // Remount when the committed range changes elsewhere (chips, clear all, back button).
+          key={`${query.minPrice ?? ""}-${query.maxPrice ?? ""}`}
+          bounds={options.bounds}
+          currency={options.currency}
+          min={query.minPrice}
+          max={query.maxPrice}
+          onCommit={([min, max]) =>
+            navigate({
+              minPrice: min <= options.bounds!.min ? null : min,
+              maxPrice: max >= options.bounds!.max ? null : max,
+            })
+          }
+        />
+      )}
+      <CheckboxGroup legend="Brand" options={options.brands} selected={query.brand} onToggle={(v) => toggle("brand", v)} />
+      <CheckboxGroup legend="Gender" options={options.genders} selected={query.gender} onToggle={(v) => toggle("gender", v)} />
       <CheckboxGroup
         legend="Movement"
-        name="movement"
-        options={movementOptions.map((v) => ({ value: v, label: movementLabels[v] }))}
-        selected={filters.movement}
-        counts={counts.movement}
-        onToggle={(v) => onToggle("movement", v)}
+        options={options.movements}
+        selected={query.movement}
+        onToggle={(v) => toggle("movement", v)}
       />
     </div>
   );
@@ -80,24 +58,32 @@ function GroupLegend({ children }: { children: React.ReactNode }) {
   return (
     <legend className="mb-4 flex w-full items-center gap-3 text-[11px] font-medium uppercase tracking-[0.3em] text-gold">
       {children}
-      <span aria-hidden className="h-px flex-1 bg-gradient-to-r from-gold/30 to-transparent" />
+      <span aria-hidden className="h-px flex-1 bg-gold/20" />
     </legend>
+  );
+}
+
+function StockToggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  const id = useId();
+  return (
+    <div className="flex items-center gap-3">
+      <Checkbox id={id} checked={checked} onCheckedChange={(v) => onChange(v === true)} className="border-foreground/30" />
+      <label htmlFor={id} className="cursor-pointer text-sm text-foreground/90">
+        Available only <span className="text-muted-foreground">(hide sold out)</span>
+      </label>
+    </div>
   );
 }
 
 function CheckboxGroup({
   legend,
-  name,
   options,
   selected,
-  counts,
   onToggle,
 }: {
   legend: string;
-  name: string;
-  options: { value: string; label: string }[];
+  options: Option[];
   selected: readonly string[];
-  counts: Record<string, number>;
   onToggle: (value: string) => void;
 }) {
   const uid = useId();
@@ -107,23 +93,26 @@ function CheckboxGroup({
       <GroupLegend>{legend}</GroupLegend>
       <ul className="space-y-3">
         {options.map((opt) => {
-          const id = `${uid}-${name}-${opt.value}`;
-          const checked = selected.includes(opt.value);
-          const count = counts[opt.value] ?? 0;
+          const id = `${uid}-${opt.slug}`;
           return (
-            <li key={opt.value} className="flex items-center gap-3">
+            <li key={opt.slug} className="flex items-center gap-3">
               <Checkbox
                 id={id}
-                checked={checked}
-                onCheckedChange={() => onToggle(opt.value)}
-                className="border-foreground/25"
+                checked={selected.includes(opt.slug)}
+                onCheckedChange={() => onToggle(opt.slug)}
+                className="border-foreground/30"
               />
               <label
                 htmlFor={id}
-                className="flex flex-1 cursor-pointer items-center justify-between gap-3 text-sm text-foreground/80 transition-colors hover:text-foreground peer-data-checked:text-foreground"
+                className="flex flex-1 cursor-pointer items-center justify-between gap-3 text-sm text-foreground/80 transition-colors hover:text-foreground"
               >
                 <span>{opt.label}</span>
-                <span className="text-xs tabular-nums text-muted-foreground">{count}</span>
+                {opt.count != null && (
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    {opt.count}
+                    <span className="sr-only"> watches</span>
+                  </span>
+                )}
               </label>
             </li>
           );
@@ -135,44 +124,37 @@ function CheckboxGroup({
 
 function PriceRange({
   bounds,
+  currency,
   min,
   max,
   onCommit,
 }: {
-  bounds: { min: number; max: number };
+  bounds: NonNullable<ShopOptions["bounds"]>;
+  currency: CurrencyOptions;
   min: number | null;
   max: number | null;
   onCommit: (range: [number, number]) => void;
 }) {
-  const committed: [number, number] = [
-    Math.max(bounds.min, min ?? bounds.min),
-    Math.min(bounds.max, max ?? bounds.max),
-  ];
-  const [range, setRange] = useState<[number, number]>(committed);
-
-  // Keep the local slider in sync when filters change elsewhere (chips, "Clear all", URL).
-  const [cMin, cMax] = committed;
-  useEffect(() => {
-    setRange([cMin, cMax]);
-  }, [cMin, cMax]);
+  const clamp = (v: number) => Math.min(bounds.max, Math.max(bounds.min, v));
+  const [range, setRange] = useState<[number, number]>([clamp(min ?? bounds.min), clamp(max ?? bounds.max)]);
 
   return (
     <fieldset>
       <GroupLegend>Price</GroupLegend>
-      <div className="mb-5 flex items-center justify-between text-sm tabular-nums">
-        <span className="text-foreground/90">{formatPrice(range[0])}</span>
-        <span aria-hidden className="mx-3 h-px flex-1 bg-border" />
-        <span className="text-foreground/90">{formatPrice(range[1])}</span>
+      <div className="mb-5 flex items-center justify-between text-sm tabular-nums" aria-hidden>
+        <span className="text-foreground/90">{formatPrice(range[0], currency)}</span>
+        <span className="mx-3 h-px flex-1 bg-border" />
+        <span className="text-foreground/90">{formatPrice(range[1], currency)}</span>
       </div>
       <Slider
         min={bounds.min}
         max={bounds.max}
-        step={1000}
+        step={bounds.step}
         minStepsBetweenThumbs={1}
         value={range}
         onValueChange={(v) => setRange([v[0], v[1]])}
         onValueCommit={(v) => onCommit([v[0], v[1]])}
-        className="py-2 [&_[data-slot=slider-thumb]]:size-4 [&_[data-slot=slider-thumb]]:border-gold [&_[data-slot=slider-thumb]]:bg-background"
+        className="py-2 [&_[data-slot=slider-range]]:bg-gold [&_[data-slot=slider-thumb]]:size-4 [&_[data-slot=slider-thumb]]:border-gold [&_[data-slot=slider-thumb]]:bg-background"
         thumbLabels={["Minimum price", "Maximum price"]}
       />
     </fieldset>
