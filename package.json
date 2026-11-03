@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:seed": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/seed.ts",
-    "dev:db": "tsx --conditions=react-server scripts/dev-db.ts"
+    "dev:db": "tsx --conditions=react-server scripts/dev-db.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@vercel/blob": "^2.8.2",
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^22.20.5",
     "@types/react": "^19",
