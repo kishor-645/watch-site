@@ -326,7 +326,7 @@ function PriceCell({
           setDraft(String(price));
           setEditing(true);
         }}
-        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-transparent px-1.5 text-sm font-medium tabular-nums outline-none hover:border-input hover:bg-input/30 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-70"
+        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-transparent px-1.5 text-sm font-medium tabular-nums outline-none hover:border-input hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-70"
         aria-label={`Price of ${watchName}: ${formatPrice(price, currency)}. Click to edit`}
       >
         {formatPrice(price, currency)}

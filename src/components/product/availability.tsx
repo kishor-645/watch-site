@@ -1,14 +1,14 @@
 import { availabilityLabels, type Availability } from "@/lib/schemas/watch";
 import { cn } from "@/lib/utils";
 
-const DOT: Record<Availability, string> = {
-  in_stock: "bg-emerald-400",
-  limited: "bg-amber-400",
-  pre_order: "bg-sky-400",
-  sold_out: "bg-muted-foreground",
+const TONE: Record<Availability, string> = {
+  in_stock: "text-success",
+  limited: "text-warning",
+  pre_order: "text-info",
+  sold_out: "text-muted-foreground",
 };
 
-/** Small status pill: coloured dot + label (colour is never the only signal). */
+/** Availability as text with a small status dot (colour is never the only signal). */
 export function AvailabilityBadge({
   availability,
   className,
@@ -17,13 +17,8 @@ export function AvailabilityBadge({
   className?: string;
 }) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-2 rounded-full border border-border bg-background/75 px-2.5 py-1 text-[0.65rem] font-medium uppercase tracking-[0.18em] text-foreground/90 backdrop-blur-sm",
-        className,
-      )}
-    >
-      <span aria-hidden className={cn("size-1.5 rounded-full", DOT[availability])} />
+    <span className={cn("inline-flex items-center gap-2 text-[0.8125rem] font-medium", TONE[availability], className)}>
+      <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-current" />
       {availabilityLabels[availability]}
     </span>
   );

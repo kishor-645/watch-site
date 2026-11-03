@@ -18,7 +18,7 @@ export function FilterPanel({ options }: { options: ShopOptions }) {
   };
 
   return (
-    <div className="space-y-9">
+    <div className="divide-y divide-border [&>*]:py-6 [&>*:first-child]:pt-0">
       <StockToggle checked={query.inStock} onChange={(inStock) => navigate({ inStock })} />
       <CheckboxGroup
         legend="Category"
@@ -54,11 +54,13 @@ export function FilterPanel({ options }: { options: ShopOptions }) {
   );
 }
 
+/** 16px, 2px radius, `border-input`; checked = ink fill with an ivory tick (from the primitive). */
+const checkboxClass = "rounded-sm border-input";
+
 function GroupLegend({ children }: { children: React.ReactNode }) {
   return (
-    <legend className="mb-4 flex w-full items-center gap-3 text-[11px] font-medium uppercase tracking-[0.3em] text-gold">
+    <legend className="eyebrow float-left mb-4 w-full text-muted-foreground">
       {children}
-      <span aria-hidden className="h-px flex-1 bg-gold/20" />
     </legend>
   );
 }
@@ -67,8 +69,8 @@ function StockToggle({ checked, onChange }: { checked: boolean; onChange: (v: bo
   const id = useId();
   return (
     <div className="flex items-center gap-3">
-      <Checkbox id={id} checked={checked} onCheckedChange={(v) => onChange(v === true)} className="border-foreground/30" />
-      <label htmlFor={id} className="cursor-pointer text-sm text-foreground/90">
+      <Checkbox id={id} checked={checked} onCheckedChange={(v) => onChange(v === true)} className={checkboxClass} />
+      <label htmlFor={id} className="cursor-pointer text-sm text-foreground">
         Available only <span className="text-muted-foreground">(hide sold out)</span>
       </label>
     </div>
@@ -91,7 +93,7 @@ function CheckboxGroup({
   return (
     <fieldset>
       <GroupLegend>{legend}</GroupLegend>
-      <ul className="space-y-3">
+      <ul className="clear-left space-y-3">
         {options.map((opt) => {
           const id = `${uid}-${opt.slug}`;
           return (
@@ -100,11 +102,11 @@ function CheckboxGroup({
                 id={id}
                 checked={selected.includes(opt.slug)}
                 onCheckedChange={() => onToggle(opt.slug)}
-                className="border-foreground/30"
+                className={checkboxClass}
               />
               <label
                 htmlFor={id}
-                className="flex flex-1 cursor-pointer items-center justify-between gap-3 text-sm text-foreground/80 transition-colors hover:text-foreground"
+                className="flex flex-1 cursor-pointer items-center justify-between gap-3 text-sm text-foreground"
               >
                 <span>{opt.label}</span>
                 {opt.count != null && (
@@ -141,10 +143,10 @@ function PriceRange({
   return (
     <fieldset>
       <GroupLegend>Price</GroupLegend>
-      <div className="mb-5 flex items-center justify-between text-sm tabular-nums" aria-hidden>
-        <span className="text-foreground/90">{formatPrice(range[0], currency)}</span>
+      <div className="clear-left mb-5 flex items-center justify-between text-sm tabular-nums" aria-hidden>
+        <span className="text-foreground">{formatPrice(range[0], currency)}</span>
         <span className="mx-3 h-px flex-1 bg-border" />
-        <span className="text-foreground/90">{formatPrice(range[1], currency)}</span>
+        <span className="text-foreground">{formatPrice(range[1], currency)}</span>
       </div>
       <Slider
         min={bounds.min}
@@ -154,7 +156,7 @@ function PriceRange({
         value={range}
         onValueChange={(v) => setRange([v[0], v[1]])}
         onValueCommit={(v) => onCommit([v[0], v[1]])}
-        className="py-2 [&_[data-slot=slider-range]]:bg-gold [&_[data-slot=slider-thumb]]:size-4 [&_[data-slot=slider-thumb]]:border-gold [&_[data-slot=slider-thumb]]:bg-background"
+        className="py-2 [&_[data-slot=slider-range]]:bg-brand [&_[data-slot=slider-thumb]]:size-4 [&_[data-slot=slider-thumb]]:border-foreground [&_[data-slot=slider-thumb]]:bg-background [&_[data-slot=slider-track]]:bg-border"
         thumbLabels={["Minimum price", "Maximum price"]}
       />
     </fieldset>

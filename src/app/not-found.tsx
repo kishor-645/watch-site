@@ -20,8 +20,8 @@ export default async function NotFound() {
   const { general } = await getSiteSettings();
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-gold/10">
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center px-5 sm:px-8 lg:h-20 lg:px-12">
+      <header className="border-b border-border">
+        <div className="mx-auto flex h-16 w-full max-w-[82.5rem] items-center px-5 sm:px-8 lg:h-[76px] lg:px-12">
           <Link href="/" aria-label={`${general.siteName} — home`} className="rounded-sm">
             <Brand siteName={general.siteName} logoUrl={general.logoUrl} className="text-xl sm:text-2xl" />
           </Link>

@@ -110,7 +110,7 @@ export function ChangePasswordForm({ required }: { required: boolean }) {
       </Field>
       <ul className="flex flex-col gap-1 text-xs" aria-label="Password requirements">
         {rules.map((r) => (
-          <li key={r.label} className={cn("flex items-center gap-1.5", r.ok ? "text-emerald-300" : "text-muted-foreground")}>
+          <li key={r.label} className={cn("flex items-center gap-1.5", r.ok ? "text-success" : "text-muted-foreground")}>
             {r.ok ? <CheckIcon className="size-3.5" aria-hidden /> : <CircleIcon className="size-3" aria-hidden />}
             {r.label}
             <span className="sr-only">{r.ok ? " — met" : " — not met yet"}</span>

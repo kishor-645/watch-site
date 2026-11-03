@@ -88,7 +88,7 @@ export default async function DashboardPage() {
             <Link
               key={c.label}
               href={c.href}
-              className="rounded-lg border border-border bg-card p-4 outline-none transition-colors hover:border-primary/40 focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="rounded-lg border border-border bg-card p-4 outline-none transition-colors hover:border-foreground/40 focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               {body}
             </Link>

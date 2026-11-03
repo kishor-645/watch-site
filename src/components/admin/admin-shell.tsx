@@ -94,7 +94,7 @@ export function AdminShell({
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-background font-sans md:grid md:grid-cols-[15rem_minmax(0,1fr)]">
+    <div data-admin="" className="min-h-screen bg-background font-sans md:grid md:grid-cols-[15rem_minmax(0,1fr)]">
       <a
         href="#admin-main"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-primary-foreground"
@@ -105,7 +105,7 @@ export function AdminShell({
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen flex-col gap-4 border-r border-border bg-card px-3 py-4 md:flex">
         <Link href="/admin" className="px-2.5 outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-          <span className="block font-serif text-xl tracking-tight">{siteName}</span>
+          <span className="block text-base font-semibold tracking-tight">{siteName}</span>
           <span className="block text-xs text-muted-foreground">Admin console</span>
         </Link>
         <div className="flex-1 overflow-y-auto">
@@ -117,7 +117,7 @@ export function AdminShell({
       <div className="flex min-w-0 flex-col">
         {/* Mobile top bar */}
         <header className="sticky top-0 z-40 flex h-12 items-center justify-between gap-2 border-b border-border bg-card/95 px-3 backdrop-blur md:hidden">
-          <Link href="/admin" className="font-serif text-lg tracking-tight">
+          <Link href="/admin" className="text-base font-semibold tracking-tight">
             {siteName} <span className="font-sans text-xs text-muted-foreground">Admin</span>
           </Link>
           <Sheet open={open} onOpenChange={setOpen}>
@@ -127,7 +127,7 @@ export function AdminShell({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-72 gap-4 p-4">
-              <SheetTitle className="font-serif text-xl">{siteName}</SheetTitle>
+              <SheetTitle className="font-sans text-base font-semibold">{siteName}</SheetTitle>
               <SheetDescription className="sr-only">Admin navigation</SheetDescription>
               <div className="flex-1 overflow-y-auto">
                 <NavLinks onNavigate={() => setOpen(false)} />
@@ -138,11 +138,11 @@ export function AdminShell({
         </header>
 
         {mustChangePassword && (
-          <div role="status" className="border-b border-primary/30 bg-primary/10 px-4 py-2.5 text-sm text-foreground">
+          <div role="status" className="border-b border-warning/30 bg-warning/10 px-4 py-2.5 text-sm text-foreground">
             <strong className="font-semibold">Action required:</strong> change the initial password before using the
             console.{" "}
             {pathname !== "/admin/account" && (
-              <Link href="/admin/account?required=1" className="font-medium text-primary underline underline-offset-4">
+              <Link href="/admin/account?required=1" className="font-medium text-foreground underline underline-offset-4">
                 Change password
               </Link>
             )}

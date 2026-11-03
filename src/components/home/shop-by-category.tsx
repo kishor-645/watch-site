@@ -5,52 +5,58 @@ import { Reveal } from "@/components/motion/reveal";
 import type { CatalogOption } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+// Up to 4 per row; 5 and 6 tiles form full rows instead of leaving a lone tile on the last row.
+const LG_COLS: Record<number, { cols: string; sizes: string }> = {
+  1: { cols: "lg:grid-cols-1", sizes: "(min-width: 768px) 31vw, 50vw" },
+  2: { cols: "lg:grid-cols-2", sizes: "(min-width: 1320px) 610px, (min-width: 1024px) 46vw, (min-width: 768px) 31vw, 50vw" },
+  3: { cols: "lg:grid-cols-3", sizes: "(min-width: 1320px) 400px, (min-width: 768px) 31vw, 50vw" },
+  5: { cols: "lg:grid-cols-5", sizes: "(min-width: 1320px) 230px, (min-width: 1024px) 18vw, (min-width: 768px) 31vw, 50vw" },
+  6: { cols: "lg:grid-cols-3", sizes: "(min-width: 1320px) 400px, (min-width: 768px) 31vw, 50vw" },
+};
+const LG_DEFAULT = {
+  cols: "lg:grid-cols-4",
+  sizes: "(min-width: 1320px) 290px, (min-width: 1024px) 23vw, (min-width: 768px) 31vw, 50vw",
+};
+
 export function ShopByCategory({ categories }: { categories: CatalogOption[] }) {
   if (!categories.length) return null;
-  const many = categories.length > 4;
+  const { cols: lgCols, sizes } = LG_COLS[categories.length] ?? LG_DEFAULT;
 
   return (
-    <section aria-labelledby="categories-heading" className="border-t border-gold/10 py-20 lg:py-28">
+    <section aria-labelledby="categories-heading" className="border-t border-border py-section">
       <div className={container}>
         <Reveal>
           <SectionHeading id="categories-heading" title="Shop by category" />
         </Reveal>
 
-        <ul
-          className={cn(
-            "mt-12 grid grid-cols-2 gap-3 sm:gap-4",
-            many ? "md:grid-cols-3 xl:grid-cols-5" : categories.length === 3 ? "md:grid-cols-3" : "md:grid-cols-4",
-          )}
+        <Reveal
+          as="ul"
+          className={cn("mt-10 grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 lg:mt-14 lg:gap-x-6 lg:gap-y-10", lgCols)}
         >
           {categories.map((c) => (
-            <Reveal as="li" key={c.slug} className="odd:last:col-span-2 md:odd:last:col-span-1">
-              <Link
-                href={`/shop?category=${encodeURIComponent(c.slug)}`}
-                className="group relative flex aspect-[4/5] h-full flex-col justify-end overflow-hidden rounded-sm border border-border bg-charcoal transition-colors hover:border-gold/40"
-              >
-                {c.imageUrl && (
-                  <Image
-                    src={c.imageUrl}
-                    alt=""
-                    fill
-                    sizes={many ? "(min-width: 1280px) 20vw, (min-width: 768px) 33vw, 50vw" : "(min-width: 768px) 25vw, 50vw"}
-                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                  />
-                )}
-                <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-                <span className="relative p-4 sm:p-5">
-                  <span className="block font-serif text-2xl leading-tight text-foreground sm:text-3xl">{c.label}</span>
-                  {c.description && (
-                    <span className="mt-1.5 line-clamp-2 hidden text-sm leading-relaxed text-foreground/75 sm:block">
-                      {c.description}
-                    </span>
+            <li key={c.slug}>
+              <Link href={`/shop?category=${encodeURIComponent(c.slug)}`} className="group block rounded-sm">
+                <span className="relative block aspect-[4/5] overflow-hidden bg-surface-2">
+                  {c.imageUrl && (
+                    <Image
+                      src={c.imageUrl}
+                      alt=""
+                      fill
+                      sizes={sizes}
+                      className="object-cover transition-transform duration-600 ease-quiet motion-safe:group-hover:scale-[1.03]"
+                    />
                   )}
-                  <span aria-hidden className="mt-3 block h-px w-6 bg-gold transition-all duration-500 group-hover:w-12" />
                 </span>
+                <span className="type-h3 mt-4 block text-foreground decoration-1 underline-offset-4 group-hover:underline">
+                  {c.label}
+                </span>
+                {c.description && (
+                  <span className="type-small mt-1 line-clamp-2 block text-muted-foreground">{c.description}</span>
+                )}
               </Link>
-            </Reveal>
+            </li>
           ))}
-        </ul>
+        </Reveal>
       </div>
     </section>
   );

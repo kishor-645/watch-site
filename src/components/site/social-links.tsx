@@ -30,7 +30,7 @@ export function SocialLinks({
             href={social[key]}
             {...externalLinkProps}
             aria-label={`${siteName} on ${label}`}
-            className="inline-flex size-10 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-gold/50 hover:text-gold"
+            className="inline-flex size-10 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors duration-150 hover:border-foreground hover:text-foreground"
           >
             <Icon className="size-4" />
           </a>

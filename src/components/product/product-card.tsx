@@ -8,7 +8,9 @@ import { AvailabilityBadge } from "./availability";
 import { Price } from "./price";
 
 interface ProductCardProps {
-  watch: Pick<Watch, "slug" | "name" | "brand" | "price" | "originalPrice" | "availability" | "images">;
+  watch: Pick<Watch, "slug" | "name" | "brand" | "price" | "originalPrice" | "availability" | "images"> & {
+    specs?: Pick<Watch["specs"], "caseSize">;
+  };
   currency: CurrencyOptions;
   /** Eagerly load the primary image (only for the LCP card). */
   priority?: boolean;
@@ -31,16 +33,16 @@ export function ProductCard({
 }: ProductCardProps) {
   const href = productPath(watch.slug);
   const [primary, secondary] = watch.images;
+  const caseSize = watch.specs?.caseSize?.trim();
 
   return (
     <article className={cn("group relative flex flex-col", className)}>
-      <div className="relative">
       {/* Duplicate image link for pointer users; keyboard/screen-reader users get the title link. */}
       <Link
         href={href}
         tabIndex={-1}
         aria-hidden
-        className="relative block aspect-[4/5] overflow-hidden rounded-sm border border-border bg-charcoal transition-colors duration-500 group-hover:border-gold/30"
+        className="relative block aspect-[4/5] overflow-hidden bg-surface-2"
       >
         {primary && (
           <Image
@@ -50,7 +52,7 @@ export function ProductCard({
             priority={priority}
             sizes={sizes}
             className={cn(
-              "object-cover transition-[opacity,transform] duration-700 ease-out group-hover:scale-[1.03]",
+              "object-cover mix-blend-multiply transition-[opacity,transform] duration-600 ease-quiet motion-safe:group-hover:scale-[1.03]",
               secondary && "group-hover:opacity-0",
             )}
           />
@@ -65,23 +67,28 @@ export function ProductCard({
             fill
             loading="lazy"
             sizes={sizes}
-            className="hidden object-cover opacity-0 transition-opacity duration-700 ease-out group-hover:opacity-100 [@media(hover:hover)]:block"
+            className="hidden object-cover opacity-0 mix-blend-multiply transition-[opacity,transform] duration-600 ease-quiet group-hover:opacity-100 motion-safe:group-hover:scale-[1.03] [@media(hover:hover)]:block"
           />
         )}
       </Link>
-      {watch.availability !== "in_stock" && (
-        <AvailabilityBadge availability={watch.availability} className="pointer-events-none absolute left-3 top-3" />
-      )}
-      </div>
 
       <div className="flex flex-1 flex-col pt-4">
-        <p className="text-[0.65rem] font-medium uppercase tracking-[0.28em] text-muted-foreground">{watch.brand}</p>
-        <Heading className="mt-1.5 text-lg font-medium leading-snug text-foreground sm:text-xl">
-          <Link href={href} className="rounded-sm transition-colors hover:text-gold-light">
+        <p className="eyebrow text-muted-foreground">{watch.brand}</p>
+        <Heading className="type-card mt-1 line-clamp-2 text-foreground">
+          <Link
+            href={href}
+            className="rounded-sm decoration-1 underline-offset-4 group-hover:underline"
+          >
             {watch.name}
           </Link>
         </Heading>
+        {caseSize && <p className="type-small mt-0.5 text-muted-foreground">{caseSize}</p>}
         <Price price={watch.price} originalPrice={watch.originalPrice} currency={currency} className="mt-2" />
+        {watch.availability !== "in_stock" && (
+          <p className="mt-1">
+            <AvailabilityBadge availability={watch.availability} />
+          </p>
+        )}
       </div>
     </article>
   );

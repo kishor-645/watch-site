@@ -45,9 +45,9 @@ export function ShopSearch() {
         defaultValue={query.q}
         placeholder="Search by name, brand or reference"
         maxLength={80}
-        className="h-10 w-full rounded-full border border-border bg-transparent pl-10 pr-4 text-sm placeholder:text-muted-foreground focus:border-gold/60"
+        className="h-10 w-full rounded-sm border border-input bg-card pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground"
       />
-      <Search aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
     </form>
   );
 }
@@ -56,11 +56,11 @@ export function SortSelect() {
   const { query, navigate } = useShop();
   return (
     <Select value={query.sort} onValueChange={(v) => navigate({ sort: v as SortKey })}>
-      <SelectTrigger aria-label="Sort watches" className="h-10! min-w-48 border-border bg-transparent px-4 text-sm">
+      <SelectTrigger aria-label="Sort watches" className="h-10! min-w-48 flex-1 rounded-sm border-input bg-card px-3 text-sm text-foreground sm:flex-none">
         <span className="mr-1 hidden text-muted-foreground sm:inline">Sort:</span>
         <SelectValue />
       </SelectTrigger>
-      <SelectContent position="popper" align="end" className="border border-border">
+      <SelectContent position="popper" align="end" className="rounded-sm border border-border">
         {SORT_OPTIONS.map((o) => (
           <SelectItem key={o.value} value={o.value} className="py-2">
             {o.label}
@@ -79,11 +79,11 @@ export function MobileFilters({ options, total }: { options: ShopOptions; total:
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" className="h-10 gap-2 border-border px-4 text-xs uppercase tracking-[0.2em] lg:hidden">
+        <Button variant="outline" className="type-nav h-10 gap-2 rounded-sm text-xs border-input bg-card px-4 lg:hidden">
           <SlidersHorizontal aria-hidden />
           Filters
           {count > 0 && (
-            <span className="ml-1 grid size-5 place-items-center rounded-full bg-gold text-[10px] font-semibold tracking-normal text-primary-foreground">
+            <span className="ml-1 grid size-5 place-items-center rounded-full bg-primary text-[10px] font-semibold tracking-normal text-primary-foreground">
               {count}
               <span className="sr-only"> active</span>
             </span>
@@ -92,7 +92,7 @@ export function MobileFilters({ options, total }: { options: ShopOptions; total:
       </SheetTrigger>
       <SheetContent side="left" className="w-full max-w-sm gap-0 border-r border-border bg-background p-0">
         <SheetHeader className="border-b border-border px-6 py-5">
-          <SheetTitle className="font-serif text-2xl font-light">Filters</SheetTitle>
+          <SheetTitle className="font-serif text-2xl font-medium">Filters</SheetTitle>
           <SheetDescription className="text-xs">Results update as you choose.</SheetDescription>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto px-6 py-8">
@@ -103,12 +103,12 @@ export function MobileFilters({ options, total }: { options: ShopOptions; total:
             variant="outline"
             onClick={() => navigate(EMPTY_FILTERS)}
             disabled={!hasActiveFilters(query)}
-            className="h-11 flex-1 text-xs uppercase tracking-[0.2em]"
+            className="type-nav h-12 flex-1 rounded-sm text-xs border-foreground/80 bg-transparent"
           >
             Clear all
           </Button>
           <SheetClose asChild>
-            <Button className="h-11 flex-[1.4] text-xs uppercase tracking-[0.2em]" aria-live="polite">
+            <Button className="type-nav h-12 flex-[1.4] rounded-sm text-xs hover:bg-foreground/85" aria-live="polite">
               {pending ? "Updating…" : `Show ${total} ${total === 1 ? "watch" : "watches"}`}
             </Button>
           </SheetClose>
@@ -165,10 +165,10 @@ export function ActiveFilters({ options }: { options: ShopOptions }) {
             type="button"
             onClick={() => navigate(chip.patch)}
             aria-label={`Remove filter: ${chip.label}`}
-            className="group inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/5 py-1.5 pl-3.5 pr-2.5 text-xs text-foreground/90 transition-colors hover:border-gold/60 hover:bg-gold/10"
+            className="group inline-flex h-8 items-center gap-2 rounded-full border border-input bg-card pl-3.5 pr-2.5 text-[0.8125rem] text-foreground transition-colors duration-150 hover:border-foreground"
           >
             {chip.label}
-            <X aria-hidden className="size-3 text-gold/70 group-hover:text-gold" />
+            <X aria-hidden className="size-3.5 text-muted-foreground group-hover:text-foreground" />
           </button>
         </li>
       ))}
@@ -176,7 +176,7 @@ export function ActiveFilters({ options }: { options: ShopOptions }) {
         <button
           type="button"
           onClick={() => navigate(EMPTY_FILTERS)}
-          className="ml-1 rounded-sm px-1 text-[11px] uppercase tracking-[0.25em] text-muted-foreground underline-offset-4 transition-colors hover:text-gold hover:underline"
+          className="ml-1 rounded-sm px-1 text-[0.8125rem] font-medium text-foreground underline decoration-border underline-offset-[6px] transition-colors duration-150 hover:decoration-foreground"
         >
           Clear all
         </button>
@@ -193,7 +193,7 @@ export function ClearAllButton() {
     <button
       type="button"
       onClick={() => navigate(EMPTY_FILTERS)}
-      className="rounded-sm text-[11px] uppercase tracking-[0.25em] text-muted-foreground underline-offset-4 transition-colors hover:text-gold hover:underline"
+      className="rounded-sm text-[0.8125rem] font-medium text-foreground underline decoration-border underline-offset-[6px] transition-colors duration-150 hover:decoration-foreground"
     >
       Clear all
     </button>
