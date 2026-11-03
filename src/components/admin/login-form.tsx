@@ -77,7 +77,7 @@ export function LoginForm() {
           autoCapitalize="none"
           spellCheck={false}
           autoFocus
-          className="h-9"
+          className="h-10"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           disabled={pending}
@@ -88,12 +88,13 @@ export function LoginForm() {
           {...a11yProps("password", fields.password)}
           name="password"
           autoComplete="current-password"
+          className="h-10"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={pending}
         />
       </Field>
-      <Button type="submit" size="lg" className="mt-1 h-10" disabled={pending}>
+      <Button type="submit" size="lg" className="mt-2 h-11 w-full rounded-xl text-sm font-semibold" disabled={pending}>
         {pending && <Loader2Icon className="animate-spin" aria-hidden />}
         {pending ? "Signing in…" : "Sign in"}
       </Button>

@@ -1,0 +1,487 @@
+/* Interactive layer: custom cursor, quick view, search overlay, page transitions, micro-interactions.
+ * Owned by the motion layer. Animate transform/opacity only; everything respects reduced motion.
+ *
+ * Utility classes for pages (all safe without JS; reduced motion = static):
+ *   .press         tactile press: scales to .97 while :active (buttons, chips, pills)
+ *   .btn-magnetic  CTA hover: lifts 2px + slight scale, springs back (ease-snap); includes .press
+ *   .lift          card hover elevation: -4px + --shadow-lift
+ *   .zoom-img      put on an image wrapper (overflow hidden): its <img> zooms 1.06 on hover of the
+ *                  wrapper or of the nearest `.group` ancestor
+ *   .shine         sheen sweep across the element on hover/focus (needs no extra markup)
+ *   .marquee       ticker: <div class="marquee"><div class="marquee-track">…items, duplicated…</div></div>
+ *                  (or use <Marquee> from @/components/motion/marquee which duplicates for you);
+ *                  pauses on hover/focus; `--marquee-duration` (default 40s); reduced motion = static wrap
+ *   .float-slow    gentle 7s float for hero visuals
+ *   .fade-up       one-shot mount animation (8px up + fade); stagger with inline animation-delay
+ * Scroll reveal: <Reveal> (.reveal, see globals.css) and <Stagger> (.stagger) — CSS scroll-driven.
+ * Cursor hooks: data-cursor="view" (shows "View"), data-cursor-label="Text", data-cursor (grow only).
+ */
+
+/* ---------------------------------------------------------------------------------------------
+ * Keyframes
+ * ------------------------------------------------------------------------------------------- */
+@keyframes mw-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes mw-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes mw-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes mw-dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes mw-dialog-out {
+  to {
+    opacity: 0;
+    transform: scale(0.97) translateY(4px);
+  }
+}
+@keyframes mw-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.35);
+  }
+  65% {
+    transform: scale(0.92);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes mw-marquee {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+@keyframes mw-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(0, -12px, 0) rotate(-1deg);
+  }
+}
+@keyframes mw-shine {
+  from {
+    transform: translateX(-120%) skewX(-20deg);
+  }
+  to {
+    transform: translateX(220%) skewX(-20deg);
+  }
+}
+@keyframes mw-line {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes mw-tick {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes mw-stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Everything below is in the components layer so Tailwind utilities on the same element win. */
+@layer components {
+/* ---------------------------------------------------------------------------------------------
+ * Micro-interactions
+ * ------------------------------------------------------------------------------------------- */
+.press,
+.btn-magnetic {
+  transition:
+    transform var(--dur-fast) var(--ease-quiet),
+    background-color var(--dur-fast),
+    border-color var(--dur-fast),
+    color var(--dur-fast),
+    opacity var(--dur-fast);
+}
+.press:active,
+.btn-magnetic:active {
+  transform: scale(0.97);
+}
+.btn-magnetic {
+  transition-duration: var(--dur-base);
+  transition-timing-function: var(--ease-snap);
+}
+@media (hover: hover) {
+  .btn-magnetic:hover {
+    transform: translateY(-2px) scale(1.02);
+  }
+  .btn-magnetic:active {
+    transform: translateY(0) scale(0.97);
+  }
+}
+
+/* Shadow on the element itself (a pseudo-element shadow would be clipped by overflow-hidden cards). */
+.lift {
+  transition:
+    transform var(--dur-base) var(--ease-quiet),
+    box-shadow var(--dur-base) var(--ease-quiet);
+}
+@media (hover: hover) {
+  .lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lift);
+  }
+}
+.lift:focus-within {
+  box-shadow: var(--shadow-lift);
+}
+
+.zoom-img img {
+  transition: transform var(--dur-slow) var(--ease-quiet);
+}
+@media (hover: hover) {
+  .zoom-img:hover img,
+  .group:hover .zoom-img img {
+    transform: scale(1.06);
+  }
+}
+
+.shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent);
+  transform: translateX(-120%) skewX(-20deg);
+  pointer-events: none;
+  z-index: 1;
+}
+@media (hover: hover) {
+  .shine:hover::after {
+    animation: mw-shine 0.9s var(--ease-quiet);
+  }
+}
+.shine:focus-visible::after {
+  animation: mw-shine 0.9s var(--ease-quiet);
+}
+
+.marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: mw-marquee var(--marquee-duration, 40s) linear infinite;
+}
+.marquee:hover .marquee-track,
+.marquee:focus-within .marquee-track {
+  animation-play-state: paused;
+}
+
+.float-slow {
+  animation: mw-float 7s ease-in-out infinite;
+  will-change: transform;
+}
+
+.fade-up {
+  animation: mw-fade-up 0.6s var(--ease-quiet) backwards;
+}
+
+.heart-pop {
+  animation: mw-pop 0.45s var(--ease-snap);
+}
+.badge-pop {
+  animation: mw-pop 0.4s var(--ease-snap);
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * Scroll-driven stagger (<Stagger>): each child fades/slides in as it enters the viewport, with an
+ * incremental offset per column (4n+k), so a row cascades. No JS; unsupported = simply visible.
+ * ------------------------------------------------------------------------------------------- */
+.stagger > :nth-child(4n + 2) {
+  --stagger-i: 1;
+}
+.stagger > :nth-child(4n + 3) {
+  --stagger-i: 2;
+}
+.stagger > :nth-child(4n + 4) {
+  --stagger-i: 3;
+}
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .stagger > * {
+      animation: mw-stagger-in linear both;
+      animation-timeline: view();
+      animation-range: entry calc(var(--stagger-i, 0) * 7%) entry calc(45% + var(--stagger-i, 0) * 7%);
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * Page transition ((site)/template.tsx). Opacity + small lift on mount; no layout shift.
+ * ------------------------------------------------------------------------------------------- */
+.page-transition {
+  /* fill "backwards": once finished no transform remains (would trap position:fixed descendants). */
+  animation: mw-fade-up 0.45s var(--ease-quiet) backwards;
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * Dialog (components/ui/dialog.tsx). Radix waits for the exit animation before unmounting.
+ * ------------------------------------------------------------------------------------------- */
+.dialog-overlay[data-state="open"] {
+  animation: mw-fade 0.25s var(--ease-quiet);
+}
+.dialog-overlay[data-state="closed"] {
+  animation: mw-fade-out 0.18s var(--ease-quiet) forwards;
+}
+.dialog-content[data-state="open"] {
+  animation: mw-dialog-in 0.35s var(--ease-quiet);
+}
+.dialog-content[data-state="closed"] {
+  animation: mw-dialog-out 0.18s var(--ease-quiet) forwards;
+}
+
+/* Quick-view pill over card images: revealed on hover / keyboard focus on hover-capable devices. */
+@media (hover: hover) and (pointer: fine) {
+  .quick-view-trigger {
+    opacity: 0;
+    transform: translateY(6px);
+    transition:
+      opacity var(--dur-base) var(--ease-quiet),
+      transform var(--dur-base) var(--ease-quiet),
+      background-color var(--dur-fast);
+  }
+  .group:hover .quick-view-trigger,
+  .group:focus-within .quick-view-trigger,
+  .quick-view-trigger:focus-visible,
+  .quick-view-trigger[aria-expanded="true"] {
+    opacity: 1;
+    transform: none;
+  }
+  .quick-view-trigger:active {
+    transform: scale(0.97);
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * Search overlay
+ * ------------------------------------------------------------------------------------------- */
+.search-overlay-backdrop[data-state="open"] {
+  animation: mw-fade 0.3s var(--ease-quiet);
+}
+.search-overlay-backdrop[data-state="closed"] {
+  animation: mw-fade-out 0.2s var(--ease-quiet) forwards;
+}
+.search-overlay[data-state="open"] .search-overlay-field {
+  animation: mw-fade-up 0.5s var(--ease-quiet) 0.05s both;
+}
+.search-overlay[data-state="open"] .search-overlay-line {
+  animation: mw-line 0.7s var(--ease-quiet) 0.15s both;
+}
+.search-overlay[data-state="open"] .search-overlay-chip {
+  animation: mw-fade-up 0.45s var(--ease-quiet) backwards;
+}
+.search-overlay[data-state="closed"] {
+  animation: mw-fade-out 0.2s var(--ease-quiet) forwards;
+}
+.search-overlay-line {
+  margin-top: -2px;
+  transform: scaleX(0);
+  transition: transform var(--dur-slow) var(--ease-quiet);
+}
+.search-overlay-field:focus-within .search-overlay-line {
+  transform: scaleX(1);
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * Watch cursor (components/interactive/watch-cursor.tsx). Decorative, never intercepts input.
+ * Above page content and the sticky header (z-40), below dialogs/sheets (z-50) and toasts; it is
+ * hidden entirely while a modal locks scrolling.
+ * ------------------------------------------------------------------------------------------- */
+.watch-cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 45;
+  pointer-events: none;
+  will-change: transform;
+  contain: layout style;
+}
+.watch-cursor-dial {
+  position: absolute;
+  left: -20px;
+  top: -20px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: scale(0.5);
+  transition:
+    opacity var(--dur-base) var(--ease-quiet),
+    transform var(--dur-base) var(--ease-snap);
+  filter: drop-shadow(0 4px 10px rgb(0 0 0 / 0.45));
+}
+.watch-cursor-svg {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.watch-cursor-face {
+  fill: rgb(10 14 28 / 0.35);
+  transition: fill var(--dur-fast);
+}
+.watch-cursor[data-state="label"] .watch-cursor-face {
+  fill: rgb(10 14 28 / 0.82);
+}
+.watch-cursor-hour,
+.watch-cursor-minute {
+  transform-origin: 20px 20px;
+  transform-box: view-box;
+}
+.watch-cursor-hour {
+  transform: rotate(300deg);
+}
+.watch-cursor-minute {
+  transform: rotate(60deg);
+}
+.watch-cursor-hands {
+  transition: opacity var(--dur-fast);
+}
+.watch-cursor-ticks {
+  opacity: 0;
+  transition: opacity var(--dur-fast);
+}
+.watch-cursor-label {
+  grid-area: 1 / 1;
+  font-family: var(--font-display);
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cream);
+  opacity: 0;
+  transition: opacity var(--dur-fast);
+}
+.watch-cursor[data-visible="true"] .watch-cursor-dial {
+  opacity: 1;
+  transform: scale(0.55);
+}
+.watch-cursor[data-visible="true"][data-state="hover"] .watch-cursor-dial {
+  transform: scale(1);
+}
+.watch-cursor[data-state="hover"] .watch-cursor-ticks {
+  opacity: 1;
+}
+.watch-cursor[data-state="hover"] .watch-cursor-minute {
+  animation: mw-tick 1.2s steps(12) infinite;
+}
+.watch-cursor[data-state="hover"] .watch-cursor-hour {
+  animation: mw-tick 14.4s steps(12) infinite;
+}
+.watch-cursor[data-visible="true"][data-state="label"] .watch-cursor-dial {
+  transform: scale(1.9);
+}
+.watch-cursor[data-state="label"] .watch-cursor-hands {
+  opacity: 0;
+}
+.watch-cursor[data-state="label"] .watch-cursor-ticks,
+.watch-cursor[data-state="label"] .watch-cursor-label {
+  opacity: 1;
+}
+.watch-cursor[data-visible="true"][data-state="text"] .watch-cursor-dial {
+  opacity: 0;
+}
+.watch-cursor[data-visible="true"][data-pressed="true"] .watch-cursor-dial {
+  transform: scale(0.45);
+}
+.watch-cursor[data-visible="true"][data-pressed="true"][data-state="label"] .watch-cursor-dial {
+  transform: scale(1.65);
+}
+body[data-scroll-locked] .watch-cursor {
+  display: none;
+}
+@media print {
+  .watch-cursor {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * Reduced motion: no infinite/looping or decorative motion at all (globals.css also shortens every
+ * transition/animation to ~0ms).
+ * ------------------------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .marquee {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .marquee-track {
+    animation: none;
+    width: auto;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .marquee-track > [aria-hidden="true"] {
+    display: none;
+  }
+  .float-slow,
+  .page-transition,
+  .fade-up,
+  .heart-pop,
+  .badge-pop,
+  .stagger > *,
+  .shine::after {
+    animation: none !important;
+  }
+  .btn-magnetic:hover,
+  .lift:hover,
+  .zoom-img:hover img,
+  .group:hover .zoom-img img {
+    transform: none;
+  }
+  .watch-cursor {
+    display: none;
+  }
+}
+}
+
+

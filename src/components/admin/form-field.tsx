@@ -93,7 +93,7 @@ export function NativeSelect({ className, ...props }: React.ComponentProps<"sele
   return (
     <select
       className={cn(
-        "h-8 w-full min-w-0 rounded-lg border border-input bg-card px-2 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/40 [&>option]:bg-popover",
+        "h-8 w-full min-w-0 rounded-lg border border-input bg-card px-2 text-sm shadow-xs text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/40 [&>option]:bg-popover",
         className,
       )}
       {...props}
@@ -118,13 +118,16 @@ export function Section({
 }) {
   const headingId = id ? `${id}-heading` : undefined;
   return (
-    <section id={id} aria-labelledby={headingId} className={cn("rounded-lg border border-border bg-card", className)}>
-      <header className="flex flex-wrap items-start justify-between gap-2 border-b border-border px-4 py-3 sm:px-5">
-        <div>
-          <h2 id={headingId} className="font-sans text-base font-semibold tracking-normal">
-            {title}
-          </h2>
-          {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
+    <section id={id} aria-labelledby={headingId} className={cn("rounded-xl border border-border bg-card shadow-[0_1px_2px_rgb(10_14_28/0.04)]", className)}>
+      <header className="flex flex-wrap items-start justify-between gap-2 border-b border-border px-4 py-3.5 sm:px-5">
+        <div className="flex min-w-0 gap-3">
+          <span aria-hidden className="mt-1 h-4 w-1 shrink-0 rounded-full bg-aurora" />
+          <div className="min-w-0">
+            <h2 id={headingId} className="text-base leading-6 font-semibold">
+              {title}
+            </h2>
+            {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
+          </div>
         </div>
         {actions}
       </header>

@@ -17,8 +17,8 @@ function pageList(current: number, count: number): (number | "gap")[] {
 }
 
 const item =
-  "inline-flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-sm px-2 text-sm tabular-nums transition-colors duration-150";
-const step = cn(item, "text-muted-foreground hover:text-foreground");
+  "inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-medium tabular-nums transition-colors duration-150";
+const step = cn(item, "border border-foreground/[0.1] text-foreground/80 hover:border-foreground/40 hover:text-foreground");
 const stepDisabled = cn(item, "text-muted-foreground opacity-40");
 
 /** Server-rendered page links that preserve every active filter. */
@@ -30,7 +30,7 @@ export function Pagination({ query, page, pageCount }: { query: CatalogQuery; pa
   };
 
   return (
-    <nav aria-label="Pagination" className="mt-16 flex justify-center border-t border-border pt-8">
+    <nav aria-label="Pagination" className="mt-16 flex justify-center">
       <ul className="flex flex-wrap items-center justify-center gap-1 sm:gap-2">
         <li>
           {page > 1 ? (
@@ -60,8 +60,8 @@ export function Pagination({ query, page, pageCount }: { query: CatalogQuery; pa
                 className={cn(
                   item,
                   p === page
-                    ? "font-medium text-foreground underline decoration-foreground decoration-1 underline-offset-8"
-                    : "text-muted-foreground hover:text-foreground",
+                    ? "bg-foreground font-semibold text-background"
+                    : "text-muted-foreground hover:bg-foreground/[0.08] hover:text-foreground",
                 )}
               >
                 {p}

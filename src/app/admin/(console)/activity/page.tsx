@@ -6,7 +6,7 @@ import { ActivityFilter } from "@/components/admin/activity-filter";
 import { auditActionLabels, AUDIT_ACTIONS, describeChanges } from "@/components/admin/audit-labels";
 import { EmptyState, PageHeader, Pagination } from "@/components/admin/page-parts";
 import { formatDateTime } from "@/lib/format";
-import { auditQuerySchema } from "@/lib/schemas/catalog-query";
+import { auditQuerySchema } from "@/lib/schemas/admin-query";
 import type { AuditAction, AuditLogEntry } from "@/lib/types";
 import { requireAdminPage } from "@/server/auth/session";
 import { listAuditLogs } from "@/server/queries/admin";
@@ -18,6 +18,14 @@ export const metadata: Metadata = {
   title: "Activity",
   robots: { index: false, follow: false },
 };
+
+/** Dot colour per action family (sign-in, watch, settings, failures). */
+function actionTone(action: string) {
+  if (action === "auth.login_failed" || action.endsWith(".delete")) return "bg-destructive";
+  if (action.startsWith("auth.")) return "bg-brand";
+  if (action.startsWith("watch.")) return "bg-hot";
+  return "bg-violet";
+}
 
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
@@ -61,10 +69,10 @@ export default async function ActivityPage({
           description={action ? "Nothing has been recorded for this action." : "Actions in the admin console will be listed here."}
         />
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_2px_rgb(10_14_28/0.04)]">
           <div
             aria-hidden
-            className="hidden border-b border-border px-4 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase lg:grid lg:grid-cols-[10rem_8rem_11rem_minmax(0,1fr)_8rem] lg:gap-3"
+            className="hidden border-b border-border bg-muted/50 px-4 py-2.5 text-[0.6875rem] font-semibold tracking-[0.12em] text-muted-foreground uppercase lg:grid lg:grid-cols-[10rem_8rem_11rem_minmax(0,1fr)_8rem] lg:gap-3"
           >
             <span>Time</span>
             <span>User</span>
@@ -79,7 +87,7 @@ export default async function ActivityPage({
               return (
                 <li
                   key={entry.id}
-                  className="flex flex-col gap-1 px-4 py-3 text-sm lg:grid lg:grid-cols-[10rem_8rem_11rem_minmax(0,1fr)_8rem] lg:items-start lg:gap-3"
+                  className="flex flex-col gap-1 px-4 py-3 text-sm transition-colors hover:bg-muted/35 lg:grid lg:grid-cols-[10rem_8rem_11rem_minmax(0,1fr)_8rem] lg:items-start lg:gap-3"
                 >
                   <time dateTime={entry.at} className="text-xs text-muted-foreground lg:text-sm">
                     {formatDateTime(entry.at, currency.locale)}
@@ -88,7 +96,13 @@ export default async function ActivityPage({
                     <span className="text-muted-foreground lg:hidden">By </span>
                     {entry.actor.username ?? <span className="text-muted-foreground">unknown</span>}
                   </span>
-                  <span className={cn("font-medium", entry.action === "auth.login_failed" && "text-destructive")}>{label}</span>
+                  <span className="flex min-w-0 items-center gap-2 font-medium">
+                    <span
+                      aria-hidden
+                      className={cn("size-1.5 shrink-0 rounded-full", actionTone(entry.action))}
+                    />
+                    <span className={cn(entry.action === "auth.login_failed" && "text-destructive")}>{label}</span>
+                  </span>
                   <div className="min-w-0">
                     <EntityLabel entry={entry} />
                     {changes.length > 0 && (

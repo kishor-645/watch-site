@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 
 /** Password input with an accessible show/hide toggle. */
@@ -9,7 +10,7 @@ export function PasswordInput(props: Omit<React.ComponentProps<typeof Input>, "t
   const [visible, setVisible] = React.useState(false);
   return (
     <div className="relative">
-      <Input {...props} type={visible ? "text" : "password"} className="h-9 pr-10" />
+      <Input {...props} type={visible ? "text" : "password"} className={cn("h-9 pr-10", props.className)} />
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}

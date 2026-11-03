@@ -49,7 +49,7 @@ export function WatchesToolbar({ initial }: { initial: ToolbarValues }) {
     <form
       role="search"
       aria-busy={isPending}
-      className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
+      className="mb-4 flex flex-col gap-3 rounded-xl border border-border bg-card p-3 shadow-[0_1px_2px_rgb(10_14_28/0.04)] sm:flex-row sm:flex-wrap sm:items-end sm:p-4"
       onSubmit={(e) => {
         e.preventDefault();
         navigate({ q });

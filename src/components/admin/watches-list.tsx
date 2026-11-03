@@ -19,15 +19,15 @@ import { StatusBadge, Thumb } from "./page-parts";
 
 type RowState = Pick<Watch, "price" | "originalPrice" | "availability" | "published" | "featured" | "updatedAt">;
 
-const GRID = "xl:grid xl:grid-cols-[minmax(0,1fr)_8.5rem_10.5rem_5.5rem_5.5rem_8rem_7.5rem] xl:items-center xl:gap-3";
+const GRID = "xl:grid xl:grid-cols-[minmax(0,1fr)_7.5rem_9.5rem_5rem_5rem_9.5rem_6.5rem] xl:items-center xl:gap-3";
 
 export function WatchesList({ watches, currency }: { watches: Watch[]; currency: CurrencyOptions }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card">
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_2px_rgb(10_14_28/0.04)]">
       <div
         aria-hidden
         className={cn(
-          "hidden border-b border-border px-4 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase",
+          "hidden border-b border-border bg-muted/50 px-4 py-2.5 text-[0.6875rem] font-semibold tracking-[0.12em] text-muted-foreground uppercase",
           GRID,
         )}
       >
@@ -98,10 +98,10 @@ function WatchRow({ watch, currency }: { watch: Watch; currency: CurrencyOptions
   const rowBusy = busy !== null;
 
   return (
-    <li aria-busy={rowBusy || undefined} className={cn("flex flex-col gap-3 px-4 py-3", GRID)}>
+    <li aria-busy={rowBusy || undefined} className={cn("flex flex-col gap-3 px-4 py-3.5 transition-colors hover:bg-muted/35 aria-busy:bg-muted/25", GRID)}>
       {/* Watch */}
       <div className="flex min-w-0 items-center gap-3">
-        <Thumb src={watch.images[0]?.url} alt="" />
+        <Thumb src={watch.images[0]?.url} alt="" size={44} />
         <div className="min-w-0">
           <Link href={editHref} className="block truncate text-sm font-medium hover:underline">
             {watch.name}
@@ -171,7 +171,7 @@ function WatchRow({ watch, currency }: { watch: Watch; currency: CurrencyOptions
       </div>
 
       {/* Updated */}
-      <p className="text-xs text-muted-foreground xl:text-sm">
+      <p className="text-xs text-muted-foreground xl:whitespace-nowrap">
         <span className="xl:hidden">Updated </span>
         <time dateTime={state.updatedAt}>{formatDateTime(state.updatedAt, currency.locale)}</time>
       </p>
@@ -326,7 +326,7 @@ function PriceCell({
           setDraft(String(price));
           setEditing(true);
         }}
-        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-transparent px-1.5 text-sm font-medium tabular-nums outline-none hover:border-input hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-70"
+        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-dashed border-transparent px-1.5 text-sm font-semibold tabular-nums outline-none transition-colors hover:border-input hover:bg-card focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-70"
         aria-label={`Price of ${watchName}: ${formatPrice(price, currency)}. Click to edit`}
       >
         {formatPrice(price, currency)}

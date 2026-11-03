@@ -1,0 +1,59 @@
+/*
+ * Admin console theme. Scoped to `[data-admin]` (light content area) and to `.dark` islands inside
+ * it (sidebar, mobile top bar, login brand panel). Plain CSS — no Tailwind directives.
+ * Token blocks are UNLAYERED (like the globals.css scopes they override) and use a doubled attribute
+ * selector so they win regardless of stylesheet order. Utilities in markup set properties, not
+ * these variables, so they still apply.
+ */
+[data-admin][data-admin] {
+    /* A slightly brighter cream than the editorial sections: long forms stay legible. */
+    --background: #f6f2ea;
+    --surface-2: #efe8db;
+    --muted: #efe8db;
+    --accent: #ebe3d4;
+    --secondary: #ebe3d4;
+    --border: #e1d9ca;
+    --input: #8c8577; /* 3.6:1 on white (control borders) */
+    --ring: #3d55e0;
+    color: var(--foreground);
+  }
+
+  /* Dark islands inside the console. */
+  [data-admin] .dark {
+    --background: #070a16;
+    --card: #0d1224;
+    --border: #1b2244;
+    --destructive: #ff6b6b;
+    --success: #3ddc97;
+    --warning: #ffb547;
+    --info: #6ec8ff;
+    --hot-ink: #ff8a57;
+    --input: #4a5687;
+    color: var(--foreground);
+  }
+
+@layer base {
+  /* Page and section titles use the brand display face; body copy stays Inter. */
+  .admin-display,
+  [data-admin] :is(h1, h2) {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+
+  [data-admin] ::placeholder {
+    color: #6c7186; /* 4.9:1 on white */
+  }
+
+  [data-admin] ::selection {
+    background: rgb(61 85 224 / 0.18);
+    color: inherit;
+  }
+}
+
+/* Soft aurora glow (login brand panel, sidebar wordmark). */
+.admin-glow {
+  background:
+    radial-gradient(55% 45% at 20% 15%, rgb(77 107 255 / 0.45), transparent 70%),
+    radial-gradient(45% 40% at 90% 40%, rgb(139 92 246 / 0.32), transparent 70%),
+    radial-gradient(55% 45% at 55% 105%, rgb(255 107 44 / 0.3), transparent 70%);
+}

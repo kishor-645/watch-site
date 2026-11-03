@@ -59,7 +59,7 @@ const checkboxClass = "rounded-sm border-input";
 
 function GroupLegend({ children }: { children: React.ReactNode }) {
   return (
-    <legend className="eyebrow float-left mb-4 w-full text-muted-foreground">
+    <legend className="eyebrow float-left mb-4 w-full font-semibold text-foreground/70">
       {children}
     </legend>
   );
@@ -110,7 +110,7 @@ function CheckboxGroup({
               >
                 <span>{opt.label}</span>
                 {opt.count != null && (
-                  <span className="text-xs tabular-nums text-muted-foreground">
+                  <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[0.6875rem] tabular-nums text-muted-foreground">
                     {opt.count}
                     <span className="sr-only"> watches</span>
                   </span>
@@ -143,7 +143,7 @@ function PriceRange({
   return (
     <fieldset>
       <GroupLegend>Price</GroupLegend>
-      <div className="clear-left mb-5 flex items-center justify-between text-sm tabular-nums" aria-hidden>
+      <div className="clear-left mb-5 flex items-center justify-between text-sm font-medium tabular-nums" aria-hidden>
         <span className="text-foreground">{formatPrice(range[0], currency)}</span>
         <span className="mx-3 h-px flex-1 bg-border" />
         <span className="text-foreground">{formatPrice(range[1], currency)}</span>
@@ -156,7 +156,7 @@ function PriceRange({
         value={range}
         onValueChange={(v) => setRange([v[0], v[1]])}
         onValueCommit={(v) => onCommit([v[0], v[1]])}
-        className="py-2 [&_[data-slot=slider-range]]:bg-brand [&_[data-slot=slider-thumb]]:size-4 [&_[data-slot=slider-thumb]]:border-foreground [&_[data-slot=slider-thumb]]:bg-background [&_[data-slot=slider-track]]:bg-border"
+        className="py-2 [&_[data-slot=slider-range]]:bg-aurora [&_[data-slot=slider-thumb]]:size-5 [&_[data-slot=slider-thumb]]:border-2 [&_[data-slot=slider-thumb]]:border-brand [&_[data-slot=slider-thumb]]:bg-foreground [&_[data-slot=slider-track]]:bg-surface-2"
         thumbLabels={["Minimum price", "Maximum price"]}
       />
     </fieldset>

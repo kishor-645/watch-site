@@ -18,7 +18,10 @@ export function AvailabilityBadge({
 }) {
   return (
     <span className={cn("inline-flex items-center gap-2 text-[0.8125rem] font-medium", TONE[availability], className)}>
-      <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-current" />
+      <span
+        aria-hidden
+        className={cn("size-1.5 shrink-0 rounded-full bg-current", availability !== "sold_out" && "dot-ping")}
+      />
       {availabilityLabels[availability]}
     </span>
   );

@@ -199,3 +199,18 @@ export const findRedirectSlug = unstable_cache(
   ["watch-redirect-slug-v1"],
   opts,
 );
+
+/** Current public data for saved/recent watches (wishlist refresh). Unknown/unpublished slugs are omitted. */
+export const getPublishedBySlugs = unstable_cache(
+  async (slugs: string[]): Promise<Watch[]> => {
+    if (!slugs.length) return [];
+    const { watches } = await getCollections();
+    const docs = await watches
+      .find({ slug: { $in: slugs }, published: true }, { projection: { description: 0, features: 0, extraSpecs: 0 } })
+      .limit(60)
+      .toArray();
+    return docs.map((d) => toWatch({ ...d, description: "", features: [], extraSpecs: [] }));
+  },
+  ["watches-by-slugs-v1"],
+  opts,
+);

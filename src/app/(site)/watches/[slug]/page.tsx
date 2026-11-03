@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { container } from "@/components/home/section-heading";
+import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
+import { AccentTitle, container, textLink } from "@/components/home/section-heading";
+import { RecentlyViewedRail, RecentlyViewedTracker } from "@/components/interactive/recently-viewed";
+import { toSnapshot } from "@/components/interactive/types";
+import { Stagger } from "@/components/motion/stagger";
 import { ProductCard } from "@/components/product/product-card";
 import { ProductDetails } from "@/components/product/product-details";
 import { ProductGallery } from "@/components/product/product-gallery";
-import { ENQUIRY_CTA_ID, ProductInfo } from "@/components/product/product-info";
+import { ENQUIRY_CTA_ID, PRICE_CARD_ID, ProductInfo } from "@/components/product/product-info";
 import { ProductJsonLd } from "@/components/product/product-json-ld";
 import { StickyEnquiryBar } from "@/components/product/sticky-enquiry-bar";
 import { Breadcrumbs } from "@/components/shop/breadcrumbs";
@@ -70,65 +75,84 @@ export default async function WatchPage({ params }: Props) {
         sellerName={settings.general.siteName}
         categoryLabel={categoryLabel}
       />
+      <RecentlyViewedTracker watch={toSnapshot(watch)} />
 
-      <div className={`${container} pt-5 md:pt-8`}>
-        <Breadcrumbs
-          items={[
-            { label: "Home", href: "/" },
-            { label: "Shop", href: "/shop" },
-            { label: categoryLabel, href: `/shop?category=${encodeURIComponent(watch.category)}` },
-            { label: watch.name },
-          ]}
-        />
-      </div>
+      <div className="relative isolate overflow-hidden">
+        <div aria-hidden className="orb orb-blue -left-48 -top-48 -z-10 size-[32rem] opacity-30" />
+        <div aria-hidden className="orb orb-violet -right-40 top-40 -z-10 size-[28rem] opacity-25" />
 
-      <section
-        aria-label={`${watch.name} overview`}
-        className={`${container} grid gap-8 pb-section pt-5 md:grid-cols-12 md:gap-10 md:pt-8 lg:gap-16 xl:gap-24`}
-      >
-        <div className="md:sticky md:top-24 md:col-span-7 md:self-start">
-          <ProductGallery images={watch.images.map(({ url, alt }) => ({ url, alt }))} name={watch.name} />
-        </div>
-        <div className="md:col-span-5 md:pt-2">
-          <ProductInfo
-            watch={watch}
-            categoryLabel={categoryLabel}
-            currency={currency}
-            contact={settings.contact}
-            trustItems={settings.home.trustItems}
-            enquiryHref={enquiryHref}
+        <div className={`${container} pt-5 md:pt-8`}>
+          <Breadcrumbs
+            items={[
+              { label: "Home", href: "/" },
+              { label: "Shop", href: "/shop" },
+              { label: categoryLabel, href: `/shop?category=${encodeURIComponent(watch.category)}` },
+              { label: watch.name },
+            ]}
           />
         </div>
-      </section>
 
-      <div className="border-t border-border">
-        <div className={`${container} py-section`}>
-          <ProductDetails watch={watch} categoryLabel={categoryLabel} movementLabel={movementLabel} />
-        </div>
+        <section
+          aria-label={`${watch.name} overview`}
+          className={`${container} grid gap-8 pb-section pt-5 md:grid-cols-12 md:gap-10 md:pt-8 lg:gap-14 xl:gap-20`}
+        >
+          <div className="md:sticky md:top-24 md:col-span-7 md:self-start">
+            <ProductGallery images={watch.images.map(({ url, alt }) => ({ url, alt }))} name={watch.name} />
+          </div>
+          <div className="md:col-span-5 md:pt-2">
+            <ProductInfo
+              watch={watch}
+              categoryLabel={categoryLabel}
+              currency={currency}
+              contact={settings.contact}
+              trustItems={settings.home.trustItems}
+              enquiryHref={enquiryHref}
+            />
+          </div>
+        </section>
+      </div>
+
+      <div className={`${container} pb-section`}>
+        <ProductDetails watch={watch} categoryLabel={categoryLabel} movementLabel={movementLabel} />
       </div>
 
       {related.length > 0 && (
-        <section aria-labelledby="related-heading" className="border-t border-border">
-          <div className={`${container} py-section`}>
-            <h2 id="related-heading" className="type-h2 text-foreground">
-              You may also like
-            </h2>
-            <ul className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:mt-14 lg:grid-cols-4 lg:gap-x-8 lg:gap-y-14">
+        <section aria-labelledby="related-heading" className="pb-section">
+          <div className={container}>
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+              <h2 id="related-heading" className="type-h2 text-foreground">
+                <AccentTitle text="You may also like" />
+              </h2>
+              <Link href={`/shop?category=${encodeURIComponent(watch.category)}`} className={`${textLink} shrink-0`}>
+                More {categoryLabel.toLowerCase()} watches
+                <ArrowUpRight aria-hidden className="size-4" />
+              </Link>
+            </div>
+            <Stagger as="ul" className="mt-10 grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:mt-14 lg:grid-cols-4 lg:gap-6">
               {related.map((w) => (
                 <li key={w.id}>
                   <ProductCard
                     watch={w}
                     currency={currency}
+                    enquiryUrl={watchEnquiryUrl(settings, w, absoluteUrl(productPath(w.slug)))}
                     sizes="(min-width: 1320px) 290px, (min-width: 1024px) 23vw, (min-width: 768px) 31vw, 50vw"
                   />
                 </li>
               ))}
-            </ul>
+            </Stagger>
           </div>
         </section>
       )}
 
-      <StickyEnquiryBar targetId={ENQUIRY_CTA_ID} price={formatPrice(watch.price, currency)} href={enquiryHref} />
+      <RecentlyViewedRail currency={currency} excludeSlug={watch.slug} className={`${container} pb-section`} />
+
+      <StickyEnquiryBar
+        targetId={ENQUIRY_CTA_ID}
+        panelId={PRICE_CARD_ID}
+        name={watch.name}
+        price={formatPrice(watch.price, currency)}
+        href={enquiryHref}
+      />
     </>
   );
 }

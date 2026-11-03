@@ -253,9 +253,13 @@ export function SettingsForm({
     <form ref={formRef} onSubmit={onSubmit} noValidate className="pb-24">
       <Tabs value={tab} onValueChange={(v) => setTab(v as TabValue)} className="gap-4">
         <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-          <TabsList className="h-auto! flex-nowrap">
+          <TabsList className="h-auto! flex-nowrap gap-0.5 rounded-xl border border-border bg-card p-1 shadow-[0_1px_2px_rgb(10_14_28/0.04)]">
             {TABS.map((t) => (
-              <TabsTrigger key={t.value} value={t.value} className="px-3 py-1.5">
+              <TabsTrigger
+                key={t.value}
+                value={t.value}
+                className="rounded-lg px-3 py-1.5 data-active:bg-primary data-active:text-primary-foreground data-active:shadow-sm"
+              >
                 {t.label}
                 {tabErrorCounts[t.value] ? (
                   <span className="ml-1 rounded-full bg-destructive px-1.5 text-[10px] leading-4 font-semibold text-white" aria-label={`${tabErrorCounts[t.value]} errors`}>
@@ -708,9 +712,19 @@ export function SettingsForm({
       </Tabs>
 
       {/* ------------------------------ Save bar ------------------------------ */}
-      <div className="sticky bottom-0 z-30 -mx-4 mt-6 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      <div className="dark sticky bottom-3 z-30 mt-6 rounded-2xl border border-border bg-background/95 px-3 py-2.5 text-foreground shadow-[0_18px_40px_-16px_rgb(10_14_28/0.55)] backdrop-blur sm:px-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className={cn("text-xs", errorCount && submitted ? "text-destructive" : "text-muted-foreground")} aria-live="polite">
+          <p
+            className={cn("flex items-center gap-2 text-xs", errorCount && submitted ? "text-destructive" : "text-muted-foreground")}
+            aria-live="polite"
+          >
+            <span
+              aria-hidden
+              className={cn(
+                "size-2 shrink-0 rounded-full",
+                errorCount && submitted ? "bg-destructive" : dirty || uploads > 0 ? "bg-hot" : "bg-success",
+              )}
+            />
             {uploads > 0
               ? "Waiting for uploads to finish…"
               : errorCount && (submitted || Object.keys(serverErrors).length)
@@ -719,7 +733,7 @@ export function SettingsForm({
                   ? "You have unsaved changes"
                   : "All changes saved"}
           </p>
-          <div className="flex gap-2">
+          <div className="ml-auto flex gap-2">
             <Button
               type="button"
               variant="ghost"
@@ -733,7 +747,7 @@ export function SettingsForm({
             >
               Discard changes
             </Button>
-            <Button type="submit" size="lg" disabled={saving || uploads > 0 || !dirty}>
+            <Button type="submit" size="lg" className="px-4 font-semibold" disabled={saving || uploads > 0 || !dirty}>
               {saving && <Loader2Icon className="animate-spin" aria-hidden />}
               {saving ? "Saving…" : "Save settings"}
             </Button>

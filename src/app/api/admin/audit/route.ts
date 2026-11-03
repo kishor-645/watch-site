@@ -1,4 +1,4 @@
-import { auditQuerySchema } from "@/lib/schemas/catalog-query";
+import { auditQuerySchema } from "@/lib/schemas/admin-query";
 import { ok, withApi } from "@/server/http";
 import { listAuditLogs } from "@/server/queries/admin";
 
