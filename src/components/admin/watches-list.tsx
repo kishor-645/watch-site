@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { ExternalLinkIcon, Loader2Icon, PencilIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -61,16 +61,21 @@ function WatchRow({ watch, currency }: { watch: Watch; currency: CurrencyOptions
   });
   const [busy, setBusy] = React.useState<keyof WatchPatch | null>(null);
 
-  /** Optimistic PATCH with rollback. Returns true on success. */
+  /**
+   * Optimistic single-field PATCH. The whole row is disabled while a request is in flight (one edit
+   * at a time per row), and a failure rolls back only the field that was being changed.
+   * Returns true on success.
+   */
   async function patch(change: WatchPatch, label: string): Promise<boolean> {
-    const field = Object.keys(change)[0] as keyof WatchPatch;
-    const previous = state;
+    if (busy) return false;
+    const field = Object.keys(change)[0] as keyof WatchPatch & keyof RowState;
+    const previousValue = state[field];
     setState((s) => ({ ...s, ...change }));
     setBusy(field);
     const res = await api.patch<Watch>(`/api/admin/watches/${encodeURIComponent(watch.id)}`, change);
     setBusy(null);
     if (!res.ok) {
-      setState(previous);
+      setState((s) => ({ ...s, [field]: previousValue }));
       const fieldMsg = res.error.fields ? Object.values(res.error.fields)[0] : undefined;
       toast.error(`${watch.name}: ${fieldMsg ?? res.error.message ?? "Update failed"}`);
       return false;
@@ -90,9 +95,10 @@ function WatchRow({ watch, currency }: { watch: Watch; currency: CurrencyOptions
   }
 
   const editHref = `/admin/watches/${watch.id}`;
+  const rowBusy = busy !== null;
 
   return (
-    <li className={cn("flex flex-col gap-3 px-4 py-3", GRID)}>
+    <li aria-busy={rowBusy || undefined} className={cn("flex flex-col gap-3 px-4 py-3", GRID)}>
       {/* Watch */}
       <div className="flex min-w-0 items-center gap-3">
         <Thumb src={watch.images[0]?.url} alt="" />
@@ -120,6 +126,7 @@ function WatchRow({ watch, currency }: { watch: Watch; currency: CurrencyOptions
             originalPrice={state.originalPrice}
             currency={currency}
             saving={busy === "price"}
+            disabled={rowBusy}
             onSave={(price) => patch({ price }, `price set to ${formatPrice(price, currency)}`)}
           />
         </div>
@@ -130,7 +137,7 @@ function WatchRow({ watch, currency }: { watch: Watch; currency: CurrencyOptions
           <NativeSelect
             id={`avail-${watch.id}`}
             value={state.availability}
-            disabled={busy === "availability"}
+            disabled={rowBusy}
             onChange={(e) => {
               const availability = e.target.value as Availability;
               void patch({ availability }, `marked ${availabilityLabels[availability].toLowerCase()}`);
@@ -149,6 +156,7 @@ function WatchRow({ watch, currency }: { watch: Watch; currency: CurrencyOptions
           watchName={watch.name}
           checked={state.published}
           busy={busy === "published"}
+          disabled={rowBusy}
           onChange={(published) => patch({ published }, published ? "published" : "unpublished (now a draft)")}
         />
         <ToggleCell
@@ -157,6 +165,7 @@ function WatchRow({ watch, currency }: { watch: Watch; currency: CurrencyOptions
           watchName={watch.name}
           checked={state.featured}
           busy={busy === "featured"}
+          disabled={rowBusy}
           onChange={(featured) => patch({ featured }, featured ? "featured" : "no longer featured")}
         />
       </div>
@@ -215,6 +224,7 @@ function ToggleCell({
   watchName,
   checked,
   busy,
+  disabled,
   onChange,
 }: {
   id: string;
@@ -222,6 +232,7 @@ function ToggleCell({
   watchName: string;
   checked: boolean;
   busy: boolean;
+  disabled: boolean;
   onChange: (value: boolean) => void;
 }) {
   return (
@@ -231,7 +242,7 @@ function ToggleCell({
         <span className="sr-only"> — {watchName}</span>
       </label>
       <div className="flex h-8 items-center gap-2">
-        <Switch id={id} checked={checked} disabled={busy} onCheckedChange={onChange} />
+        <Switch id={id} checked={checked} disabled={disabled} onCheckedChange={onChange} />
         {busy && <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" aria-hidden />}
       </div>
     </div>
@@ -244,6 +255,7 @@ function PriceCell({
   originalPrice,
   currency,
   saving,
+  disabled,
   onSave,
 }: {
   watchName: string;
@@ -251,6 +263,8 @@ function PriceCell({
   originalPrice: number | null;
   currency: CurrencyOptions;
   saving: boolean;
+  /** Another edit of this row is in flight. */
+  disabled: boolean;
   onSave: (price: number) => Promise<boolean>;
 }) {
   const [editing, setEditing] = React.useState(false);
@@ -307,11 +321,12 @@ function PriceCell({
       <button
         ref={triggerRef}
         type="button"
+        disabled={disabled}
         onClick={() => {
           setDraft(String(price));
           setEditing(true);
         }}
-        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-transparent px-1.5 text-sm font-medium tabular-nums outline-none hover:border-input hover:bg-input/30 focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-transparent px-1.5 text-sm font-medium tabular-nums outline-none hover:border-input hover:bg-input/30 focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-70"
         aria-label={`Price of ${watchName}: ${formatPrice(price, currency)}. Click to edit`}
       >
         {formatPrice(price, currency)}

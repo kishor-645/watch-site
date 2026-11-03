@@ -58,11 +58,11 @@ You will be forced to change it at first login anyway.)
 
 | Name | Value | Environments |
 |---|---|---|
-| `MONGODB_URI` | the Atlas connection string from 1.3 | Production (+ Preview, see §7) |
+| `MONGODB_URI` | the Atlas connection string from 1.3 | Production only (Preview gets its own — §7) |
 | `MONGODB_DB` | `mywatch` | Production |
-| `SESSION_SECRET` | random string from step 2 (≥ 32 chars) | Production, Preview |
+| `SESSION_SECRET` | random string from step 2 (≥ 32 chars) | Production only (Preview gets a different one) |
 | `INITIAL_ADMIN_USERNAME` | `admin` | Production |
-| `INITIAL_ADMIN_PASSWORD` | random/initial password from step 2 | Production |
+| `INITIAL_ADMIN_PASSWORD` | initial password from step 2 — **at least 12 characters** (shorter values are refused) | Production |
 | `NEXT_PUBLIC_SITE_URL` | your final URL, e.g. `https://watch-site.vercel.app` (no trailing slash) | Production |
 
 4. Click **Deploy**. The build does not need the database, so it succeeds even before Atlas is ready.
@@ -86,8 +86,13 @@ Then **Deployments → ⋯ → Redeploy** so the new variable is picked up.
 4. **Dashboard → Import 15 sample watches** (only shown while the catalogue is empty) — or add your own.
 5. **Settings** → set site name, logo, WhatsApp number (default `+91 9016456462`), phone, email,
    address, social links, homepage texts → **Save**. Changes appear on the public site immediately.
-6. **Remove `INITIAL_ADMIN_PASSWORD`** from Vercel → Settings → Environment Variables (it is ignored
-   once an admin exists, but there is no reason to keep it). Redeploy is not required for the app to keep working.
+6. **Do steps 1–3 right after the first deployment.** Until the admin account exists, anyone who knows
+   the initial password could create it.
+7. **Remove `INITIAL_ADMIN_PASSWORD`** from Vercel → Settings → Environment Variables, then **Redeploy**
+   (a running deployment keeps the values it was deployed with). It is ignored once an admin exists anyway.
+
+The username comes from `INITIAL_ADMIN_USERNAME` (default `admin`); a less obvious name is slightly safer.
+Sign-in attempts are rate-limited per IP using Vercel's client-IP headers — the app is designed to run on Vercel.
 
 **Forgot your password?** With database access, delete the document in the `admins` collection
 (Atlas → Browse Collections → `mywatch.admins`), set a fresh `INITIAL_ADMIN_PASSWORD` in Vercel,
@@ -112,7 +117,7 @@ values). HTTPS certificates are automatic. Then update `NEXT_PUBLIC_SITE_URL` to
 | `/shop`, `/shop?category=diver`, `/shop?q=aurora` | Filtering, search and pagination work |
 | A product page → **Check Availability** | Opens WhatsApp (`wa.me/<your number>`) with watch name, brand, model, price and the product URL |
 | `/admin` while logged out | Redirects to `/admin/login` |
-| Wrong password 6× | "Too many attempts" message |
+| Wrong password 6× for one username | "Too many sign-in attempts" message |
 | Admin: change a price | New price on the public product page on refresh |
 | Admin: unpublish a watch | Disappears from shop; its URL returns 404 |
 | Admin: upload an image | Appears in the form and on the site after saving |
@@ -128,9 +133,11 @@ Logs: Vercel → Project → **Logs** (JSON lines; secrets are redacted).
 ## 7. Environments (recommended)
 
 - **Production** uses database `mywatch`.
-- **Preview** deployments (every pull request) should use a separate database so testing never
-  touches live data: set `MONGODB_DB=mywatch_preview` for the *Preview* environment (same cluster is fine
-  on the free tier) and its own `INITIAL_ADMIN_PASSWORD`.
+- **Preview** deployments run unreviewed branch code, so they must never hold production secrets:
+  - create a second Atlas user with `readWrite` on **`mywatch_preview` only**; set its connection string as
+    `MONGODB_URI` and `MONGODB_DB=mywatch_preview` for the *Preview* environment (same cluster is fine);
+  - set a **different** `SESSION_SECRET` and `INITIAL_ADMIN_PASSWORD` for Preview;
+  - keep Vercel **Deployment Protection** enabled for previews (Settings → Deployment Protection).
 - **Local**: `npm run dev:db` + `npm run dev` with `.env.local` (see `.env.example`) — no Atlas needed.
 
 ---

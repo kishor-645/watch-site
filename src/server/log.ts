@@ -8,10 +8,17 @@ import "server-only";
 type Level = "debug" | "info" | "warn" | "error";
 const SENSITIVE = /pass(word)?|secret|token|authorization|cookie|uri|hash/i;
 
+/** Removes credentials from MongoDB connection strings embedded in text. */
+const scrub = (s: string) => s.replace(/mongodb(\+srv)?:\/\/[^@\s]+@/g, "mongodb$1://[redacted]@");
+
 function redact(value: unknown, depth = 0): unknown {
   if (depth > 4 || value == null) return value;
   if (value instanceof Error) {
-    return { name: value.name, message: value.message, ...(process.env.NODE_ENV !== "production" && { stack: value.stack }) };
+    return {
+      name: value.name,
+      message: scrub(value.message),
+      ...(process.env.NODE_ENV !== "production" && value.stack && { stack: scrub(value.stack) }),
+    };
   }
   if (Array.isArray(value)) return value.slice(0, 20).map((v) => redact(v, depth + 1));
   if (typeof value === "object") {
@@ -21,7 +28,7 @@ function redact(value: unknown, depth = 0): unknown {
     }
     return out;
   }
-  if (typeof value === "string") return value.replace(/mongodb(\+srv)?:\/\/[^@\s]+@/g, "mongodb$1://[redacted]@");
+  if (typeof value === "string") return scrub(value);
   return value;
 }
 

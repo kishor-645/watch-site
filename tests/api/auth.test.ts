@@ -75,7 +75,8 @@ describe("auth API", () => {
 
     const { admins, audit } = await collections();
     const admin = await admins.findOne({ username: INITIAL_USER });
-    expect(admin).toMatchObject({ mustChangePassword: true, sessionVersion: 1, failedLoginCount: 0 });
+    expect(admin).toMatchObject({ mustChangePassword: true, sessionVersion: 1 });
+    expect(admin).not.toHaveProperty("lockedUntil");
     expect(admin!.passwordHash).toMatch(/^\$2[aby]\$12\$/);
     expect(admin!.lastLoginAt).toBeInstanceOf(Date);
     expect(await audit.countDocuments({ action: "auth.bootstrap" })).toBe(1);
@@ -167,44 +168,89 @@ describe("auth API", () => {
     expect(res.data).toEqual({ username: INITIAL_USER, mustChangePassword: false });
     expect((await call(r.stats.GET, "GET", "/api/admin/stats")).status).toBe(200);
     const { admins, audit } = await collections();
-    expect(await admins.findOne({ username: INITIAL_USER })).toMatchObject({ lastLoginIp: "198.51.100.3", failedLoginCount: 0 });
+    expect(await admins.findOne({ username: INITIAL_USER })).toMatchObject({ lastLoginIp: "198.51.100.3" });
     expect(await audit.countDocuments({ action: "auth.login" })).toBe(1);
   });
 
-  it("uses the same 401 for wrong passwords and unknown users", async () => {
-    const wrong = await login(INITIAL_USER, "wrong-password-1", "198.51.100.4");
-    const unknown = await login("ghost", "wrong-password-1", "198.51.100.4");
+  it("gives identical responses for wrong passwords and unknown users (401 and 429)", async () => {
+    const ip = "198.51.100.4";
+    const wrong = await login(INITIAL_USER, "wrong-password-1", ip);
+    const unknown = await login("ghost", "wrong-password-1", ip);
     expect(wrong.status).toBe(401);
     expect(unknown.status).toBe(401);
     expect(errorOf(wrong)).toEqual(errorOf(unknown));
-  });
+    const headerNames = (h: Headers) => [...h.keys()].filter((k) => k !== "date").sort();
+    expect(headerNames(wrong.headers)).toEqual(headerNames(unknown.headers));
 
-  it("rate limits failed logins per IP (5 / 15 min) with Retry-After", async () => {
+    // Exhaust the per-username budget for both from a fresh IP: same 429 body and headers.
+    const ip2 = "198.51.100.40";
+    for (let i = 0; i < 4; i++) {
+      expect((await login(INITIAL_USER, `bad-${i}`, ip2)).status).toBe(401);
+      expect((await login("ghost", `bad-${i}`, ip2)).status).toBe(401);
+    }
+    await login(INITIAL_USER, "bad-4", ip2);
+    await login("ghost", "bad-4", ip2);
+    const known429 = await login(INITIAL_USER, NEW_PASS, ip2);
+    const unknown429 = await login("ghost", NEW_PASS, ip2);
+    expect(known429.status).toBe(429);
+    expect(unknown429.status).toBe(429);
+    expect(errorOf(known429)).toEqual(errorOf(unknown429));
+    expect(errorOf(known429)).toEqual({ code: "RATE_LIMITED", message: "Too many sign-in attempts. Please try again later." });
+    expect(known429.headers.get("retry-after")).toBeTruthy();
+    expect(headerNames(known429.headers)).toEqual(headerNames(unknown429.headers));
+  }, 60_000);
+
+  it("limits every attempt per username + IP (5 / 15 min) with Retry-After, even the correct password", async () => {
     const ip = "192.0.2.50";
-    for (let i = 0; i < 5; i++) expect((await login("ghost", `bad-${i}`, ip)).status).toBe(401);
+    for (let i = 0; i < 5; i++) expect((await login(INITIAL_USER, `bad-${i}`, ip)).status).toBe(401);
     const blocked = await login(INITIAL_USER, NEW_PASS, ip);
     expect(blocked.status).toBe(429);
     expect(errorOf(blocked).code).toBe("RATE_LIMITED");
     const retry = Number(blocked.headers.get("retry-after"));
     expect(retry).toBeGreaterThan(0);
     expect(retry).toBeLessThanOrEqual(15 * 60);
-    // Other IPs are unaffected; successful logins do not consume the budget.
-    for (let i = 0; i < 6; i++) expect((await login(INITIAL_USER, NEW_PASS, "192.0.2.51")).status).toBe(200);
-  });
+    // Other IPs are unaffected; a success resets the counters, so repeated good logins are fine.
+    for (let i = 0; i < 7; i++) expect((await login(INITIAL_USER, NEW_PASS, "192.0.2.51")).status).toBe(200);
+  }, 60_000);
 
-  it("locks an account after 10 consecutive failures", async () => {
-    for (let i = 0; i < 10; i++) {
-      expect((await login(INITIAL_USER, `bad-${i}`, `10.0.${i}.1`)).status).toBe(401);
+  it("limits every attempt per IP across usernames (10 / 15 min)", async () => {
+    const ip = "192.0.2.60";
+    for (let i = 0; i < 10; i++) expect((await login(`ghost${i}`, "whatever-1", ip)).status).toBe(401);
+    expect((await login("ghost-new", "whatever-1", ip)).status).toBe(429);
+    expect((await login(INITIAL_USER, NEW_PASS, ip)).status).toBe(429);
+  }, 60_000);
+
+  it("a parallel burst cannot test more passwords than the limit", async () => {
+    const { audit } = await collections();
+    const failedBefore = await audit.countDocuments({ action: "auth.login_failed" });
+    const ip = "192.0.2.70";
+    const results = await Promise.all(Array.from({ length: 20 }, (_, i) => login(INITIAL_USER, `burst-${i}`, ip)));
+    const statuses = results.map((x) => x.status);
+    expect(statuses.filter((s) => s === 401)).toHaveLength(5);
+    expect(statuses.filter((s) => s === 429)).toHaveLength(15);
+    // Every password that reached bcrypt wrote one failure entry: at most the limit did.
+    expect((await audit.countDocuments({ action: "auth.login_failed" })) - failedBefore).toBe(5);
+    expect((await login(INITIAL_USER, NEW_PASS, ip)).status).toBe(429);
+  }, 60_000);
+
+  it("failures from other sources never lock the owner out (no account-wide lock)", async () => {
+    for (let n = 0; n < 4; n++) {
+      const ip = `10.0.${n}.1`;
+      await Promise.all(Array.from({ length: 8 }, (_, i) => login(INITIAL_USER, `bad-${i}`, ip)));
     }
-    const locked = await login(INITIAL_USER, NEW_PASS, "10.0.99.1");
-    expect(locked.status).toBe(429);
-    expect(Number(locked.headers.get("retry-after"))).toBeGreaterThan(14 * 60);
     const { admins } = await collections();
-    expect((await admins.findOne({ username: INITIAL_USER }))!.lockedUntil!.getTime()).toBeGreaterThan(Date.now());
-
-    // Lock expiry restores access.
-    await admins.updateOne({ username: INITIAL_USER }, { $set: { lockedUntil: new Date(Date.now() - 1000) } });
+    const admin = await admins.findOne({ username: INITIAL_USER });
+    expect(admin).not.toHaveProperty("lockedUntil");
+    expect(admin).not.toHaveProperty("failedLoginCount");
     expect((await login(INITIAL_USER, NEW_PASS, "10.0.99.2")).status).toBe(200);
+  }, 60_000);
+
+  it("buckets IPv6 clients by /64", async () => {
+    for (let i = 1; i <= 5; i++) expect((await login(INITIAL_USER, `bad-${i}`, `2001:db8:aa:bb::${i}`)).status).toBe(401);
+    // Another address in the same /64 shares the budget…
+    expect((await login(INITIAL_USER, NEW_PASS, "2001:db8:aa:bb:ffff:1:2:3")).status).toBe(429);
+    // …a different /64 does not.
+    expect((await login(INITIAL_USER, NEW_PASS, "2001:db8:aa:bc::1")).status).toBe(200);
   }, 60_000);
 
   it("rejects malformed bodies", async () => {
@@ -214,16 +260,15 @@ describe("auth API", () => {
   });
 
   it("rate limiter is atomic under concurrency and restarts expired windows", async () => {
-    const { hitRateLimit, peekRateLimit, resetRateLimit } = await import("@/server/rate-limit");
+    const { hitRateLimit, resetRateLimit } = await import("@/server/rate-limit");
     const { getCollections } = await import("@/server/db");
     const opts = { limit: 5, windowSeconds: 60 };
     const results = await Promise.all(Array.from({ length: 12 }, () => hitRateLimit("t:concurrent", opts)));
     expect(results.filter((x) => x.allowed)).toHaveLength(5);
-    expect((await peekRateLimit("t:concurrent", opts)).allowed).toBe(false);
 
     const { rateLimits } = await getCollections();
+    expect((await rateLimits.findOne({ _id: "t:concurrent" }))?.count).toBe(12);
     await rateLimits.updateOne({ _id: "t:concurrent" }, { $set: { expiresAt: new Date(Date.now() - 1000) } });
-    expect((await peekRateLimit("t:concurrent", opts)).allowed).toBe(true);
     const fresh = await hitRateLimit("t:concurrent", opts);
     expect(fresh).toMatchObject({ allowed: true, remaining: 4 });
     expect(fresh.retryAfterSeconds).toBeGreaterThan(55);

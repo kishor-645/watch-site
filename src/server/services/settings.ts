@@ -3,6 +3,7 @@ import { siteSettingsSchema, type SiteSettings } from "@/lib/schemas/settings";
 import type { PublicSettings } from "@/lib/types";
 import { writeAudit, type AuditChanges, type RequestMeta } from "../audit";
 import type { AdminSession } from "../auth/session";
+import { collectStrings, deleteUnreferencedBlobs, foreignBlobFields, normalizeBlobUrl } from "../blob";
 import { revalidateSettings, revalidateWatches } from "../cache";
 import { getCollections } from "../db";
 import { ApiError, zodFields } from "../http";
@@ -35,6 +36,8 @@ export async function updateSettings(input: unknown, admin: AdminSession, meta: 
     throw new ApiError(422, "VALIDATION_ERROR", "Please correct the highlighted fields", zodFields(parsed.error));
   }
   const data = parsed.data;
+  const foreign = foreignBlobFields(collectStrings(data));
+  if (Object.keys(foreign).length) throw new ApiError(422, "VALIDATION_ERROR", "Please correct the highlighted fields", foreign);
   const before = await loadSettings();
 
   const fields: Record<string, string> = {};
@@ -53,9 +56,10 @@ export async function updateSettings(input: unknown, admin: AdminSession, meta: 
   revalidateSettings();
   revalidateWatches();
 
+  // The changed section names go into entity.label; `changes` only carries real field values.
   const changed = SECTIONS.filter((s) => JSON.stringify(before[s]) !== JSON.stringify(data[s]));
   if (changed.length) {
-    const changes: AuditChanges = { sections: { from: null, to: changed } };
+    const changes: AuditChanges = {};
     if (before.contact.whatsappNumber !== data.contact.whatsappNumber) {
       changes["contact.whatsappNumber"] = { from: before.contact.whatsappNumber, to: data.contact.whatsappNumber };
     }
@@ -67,5 +71,10 @@ export async function updateSettings(input: unknown, admin: AdminSession, meta: 
       ...meta,
     });
   }
+
+  // Uploaded images that were replaced/removed in the settings (and are not used elsewhere).
+  const now = new Set(collectStrings(data).map((s) => normalizeBlobUrl(s.url)));
+  const dropped = collectStrings(before).map((s) => s.url).filter((u) => !now.has(normalizeBlobUrl(u)));
+  await deleteUnreferencedBlobs(dropped);
   return loadSettings();
 }

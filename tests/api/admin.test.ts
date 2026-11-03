@@ -147,9 +147,12 @@ describe("admin API", () => {
       expect(revalidateTag).toHaveBeenCalledWith("watches");
 
       const [update] = await auditOf("watch.update");
-      expect(update!.changes).toMatchObject({ price: { from: 25000, to: 27000 }, slug: { from: "reef", to: "reef-ii" }, published: { from: false, to: true } });
-      const [price] = await auditOf("watch.price_change");
-      expect(price!.changes).toEqual({ price: { from: 25000, to: 27000 } });
+      // Prices are only in the price_change entry — no duplicate in watch.update.
+      expect(update!.changes).toEqual({ slug: { from: "reef", to: "reef-ii" }, name: { from: "Reef", to: "Reef II" }, published: { from: false, to: true } });
+      const prices = await auditOf("watch.price_change");
+      expect(prices).toHaveLength(1);
+      expect(prices[0]!.changes).toEqual({ price: { from: 25000, to: 27000 } });
+      expect(await (await collections()).watches.findOne({ slug: "reef-ii" })).toMatchObject({ previousSlugs: ["reef"] });
 
       const taken = await call(r.watch.PUT, "PUT", `/api/admin/watches/${w.id}`, {
         params: { id: w.id },
@@ -158,6 +161,68 @@ describe("admin API", () => {
       expect(taken.status).toBe(409);
       // Keeping its own slug is not a conflict.
       expect((await call(r.watch.PUT, "PUT", `/api/admin/watches/${w.id}`, { params: { id: w.id }, body: watchInput({ name: "Reef II", slug: "reef-ii", price: 27000, published: true }) })).status).toBe(200);
+    });
+
+    it("PUT without changes writes no audit entry; a price-only PUT writes only price_change", async () => {
+      const body = watchInput({ name: "Steady", slug: "steady", price: 5000 });
+      const { data: w } = await create(body);
+      const put = (b: WatchInput) => call<Watch>(r.watch.PUT, "PUT", `/api/admin/watches/${w.id}`, { params: { id: w.id }, body: b });
+      const { audit } = await collections();
+      const count = (action: string) => audit.countDocuments({ action: action as never, "entity.id": w.id });
+
+      expect((await put(body)).status).toBe(200);
+      expect(await count("watch.update")).toBe(0);
+      expect(await count("watch.price_change")).toBe(0);
+
+      expect((await put({ ...body, price: 4500 })).status).toBe(200);
+      expect(await count("watch.update")).toBe(0);
+      expect(await count("watch.price_change")).toBe(1);
+
+      // A change to a non-audited field is still recorded (without from/to values).
+      expect((await put({ ...body, price: 4500, description: "New text" })).status).toBe(200);
+      expect(await count("watch.update")).toBe(1);
+      expect(await count("watch.price_change")).toBe(1);
+      expect((await audit.findOne({ action: "watch.update", "entity.id": w.id }))!.changes).toBeNull();
+    });
+
+    it("keeps old slugs for redirects and treats another watch's old slug as taken", async () => {
+      const { findRedirectSlug } = await import("@/server/queries/watches");
+      const { data: w } = await create(watchInput({ name: "Wanderer", slug: "wanderer-old", published: true }));
+      const put = (slug: string) =>
+        call<Watch>(r.watch.PUT, "PUT", `/api/admin/watches/${w.id}`, {
+          params: { id: w.id },
+          body: watchInput({ name: "Wanderer", slug, published: true }),
+        });
+      expect((await put("wanderer-new")).status).toBe(200);
+      expect(await findRedirectSlug("wanderer-old")).toBe("wanderer-new");
+      expect(await findRedirectSlug("WANDERER-OLD")).toBe("wanderer-new");
+      expect(await findRedirectSlug("never-existed")).toBeNull();
+
+      // Explicit: 409 on slug. Auto-generated: skips the reserved slug.
+      const clash = await create(watchInput({ name: "Other", slug: "wanderer-old" }));
+      expect(clash.status).toBe(409);
+      expect(errorOf(clash)).toMatchObject({ code: "CONFLICT", fields: { slug: expect.any(String) } });
+      const { data: other } = await create(watchInput({ brand: "Wanderer", name: "Old" }));
+      expect(other.slug).toBe("wanderer-old-2");
+      const renameClash = await call(r.watch.PUT, "PUT", `/api/admin/watches/${other.id}`, {
+        params: { id: other.id },
+        body: watchInput({ brand: "Wanderer", name: "Old", slug: "wanderer-old" }),
+      });
+      expect(renameClash.status).toBe(409);
+
+      // The watch itself may take its old slug back; the list then holds the slug it left.
+      expect((await put("wanderer-old")).status).toBe(200);
+      const doc = await (await collections()).watches.findOne({ slug: "wanderer-old" });
+      expect(doc!.previousSlugs).toEqual(["wanderer-new"]);
+      expect(await findRedirectSlug("wanderer-new")).toBe("wanderer-old");
+      expect(await findRedirectSlug("wanderer-old")).toBeNull();
+
+      // Unpublished watches do not redirect.
+      await (await collections()).watches.updateOne({ slug: "wanderer-old" }, { $set: { published: false } });
+      expect(await findRedirectSlug("wanderer-new")).toBeNull();
+
+      // Clean up so later list counts are unaffected.
+      for (const id of [w.id, other.id]) await call(r.watch.DELETE, "DELETE", `/api/admin/watches/${id}`, { params: { id } });
     });
 
     it("PATCH updates price, publish state and enforces originalPrice on the merged doc", async () => {
@@ -223,10 +288,29 @@ describe("admin API", () => {
       expect((await getSiteSettings()).contact.whatsappNumber).toBe("919876543210");
 
       const [entry] = await auditOf("settings.update");
-      expect(entry!.changes).toEqual({
-        sections: { from: null, to: ["general", "contact"] },
-        "contact.whatsappNumber": { from: "919016456462", to: "919876543210" },
-      });
+      expect(entry!.entity.label).toBe("general, contact");
+      expect(entry!.changes).toEqual({ "contact.whatsappNumber": { from: "919016456462", to: "919876543210" } });
+
+      // Saving again without changes writes no entry; a change without a tracked field has changes = null.
+      await call(r.settings.PUT, "PUT", "/api/admin/settings", { body });
+      expect(await auditOf("settings.update")).toHaveLength(1);
+      await call(r.settings.PUT, "PUT", "/api/admin/settings", { body: { ...body, footer: { ...body.footer, blurb: "Hi" } } });
+      const [footer] = await auditOf("settings.update");
+      expect(footer).toMatchObject({ entity: { label: "footer" }, changes: null });
+    });
+
+    it("PUT rejects Blob images from another store (422 on the field)", async () => {
+      process.env.BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_abc123_secret";
+      try {
+        const foreign = "https://otherstore9.public.blob.vercel-storage.com/site/logo.png";
+        const res = await call(r.settings.PUT, "PUT", "/api/admin/settings", {
+          body: { ...DEFAULT_SETTINGS, general: { ...DEFAULT_SETTINGS.general, logoUrl: foreign } },
+        });
+        expect(res.status).toBe(422);
+        expect(errorOf(res).fields).toHaveProperty("general.logoUrl");
+      } finally {
+        delete process.env.BLOB_READ_WRITE_TOKEN;
+      }
     });
 
     it("PUT rejects invalid input and removing an in-use category", async () => {
@@ -288,7 +372,7 @@ describe("admin API", () => {
     });
 
     it("uploads validate input before contacting Vercel", async () => {
-      process.env.BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_teststore_secret";
+      process.env.BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_abc123_secret";
       try {
         const badPath = await call(r.uploads.POST, "POST", "/api/admin/uploads", {
           body: { type: "blob.generate-client-token", payload: { pathname: "../etc/passwd", multipart: false, clientPayload: null } },
@@ -312,7 +396,7 @@ describe("admin API", () => {
       const { del } = await import("@vercel/blob");
       const delMock = vi.mocked(del);
       const second = BLOB_IMG.replace("front", "back");
-      process.env.BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_teststore_secret";
+      process.env.BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_abc123_secret";
       try {
         const images = [
           { url: BLOB_IMG, pathname: "watches/front-x1.jpg" },
@@ -335,6 +419,58 @@ describe("admin API", () => {
         delMock.mockClear();
         await call(r.watch.DELETE, "DELETE", `/api/admin/watches/${w.id}`, { params: { id: w.id } });
         expect(delMock.mock.calls[0]![0]).toEqual([second]);
+      } finally {
+        delete process.env.BLOB_READ_WRITE_TOKEN;
+      }
+    });
+
+    it("rejects Blob URLs from another store on save", async () => {
+      process.env.BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_abc123_secret";
+      try {
+        const foreign = "https://otherstore9.public.blob.vercel-storage.com/watches/x.jpg";
+        const res = await create(watchInput({ slug: "foreign", images: [{ url: BLOB_IMG }, { url: foreign, pathname: "watches/x.jpg" }] }));
+        expect(res.status).toBe(422);
+        expect(Object.keys(errorOf(res).fields!)).toEqual(["images.1.url"]);
+        // The foreign URL is also not deletable through the unsaved-upload endpoint.
+        expect((await call(r.uploads.DELETE, "DELETE", "/api/admin/uploads", { body: { url: foreign } })).status).toBe(422);
+      } finally {
+        delete process.env.BLOB_READ_WRITE_TOKEN;
+      }
+    });
+
+    it("never deletes a Blob still referenced by another watch or the settings", async () => {
+      const { del } = await import("@vercel/blob");
+      const delMock = vi.mocked(del);
+      process.env.BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_abc123_secret";
+      const shared = "https://abc123.public.blob.vercel-storage.com/watches/shared-y.jpg";
+      const logo = "https://abc123.public.blob.vercel-storage.com/site/logo-z.png";
+      try {
+        // No `pathname`: ownership is decided by the URL's host, not by client-supplied fields.
+        const { data: a } = await create(watchInput({ slug: "share-a", images: [{ url: shared }] }));
+        const { data: b } = await create(watchInput({ slug: "share-b", images: [{ url: `${shared}?v=2` }] }));
+        const { data: c } = await create(watchInput({ slug: "share-c", images: [{ url: logo }, { url: IMG }] }));
+        await call(r.settings.PUT, "PUT", "/api/admin/settings", {
+          body: { ...DEFAULT_SETTINGS, general: { ...DEFAULT_SETTINGS.general, logoUrl: logo } },
+        });
+
+        delMock.mockClear();
+        await call(r.watch.DELETE, "DELETE", `/api/admin/watches/${a.id}`, { params: { id: a.id } });
+        expect(delMock).not.toHaveBeenCalled(); // still used by share-b (same URL, other query)
+        const used = await call(r.uploads.DELETE, "DELETE", "/api/admin/uploads", { body: { url: `${logo}#frag` } });
+        expect(used.status).toBe(409);
+
+        await call(r.watch.PUT, "PUT", `/api/admin/watches/${c.id}`, { params: { id: c.id }, body: watchInput({ slug: "share-c", images: [{ url: IMG }] }) });
+        expect(delMock).not.toHaveBeenCalled(); // logo is still in the settings
+
+        // Replacing the settings logo frees it → deleted now.
+        await call(r.settings.PUT, "PUT", "/api/admin/settings", { body: DEFAULT_SETTINGS });
+        expect(delMock).toHaveBeenCalledTimes(1);
+        expect(delMock.mock.calls[0]![0]).toEqual([logo]);
+
+        delMock.mockClear();
+        await call(r.watch.DELETE, "DELETE", `/api/admin/watches/${b.id}`, { params: { id: b.id } });
+        expect(delMock.mock.calls[0]![0]).toEqual([`${shared}?v=2`]);
+        await call(r.watch.DELETE, "DELETE", `/api/admin/watches/${c.id}`, { params: { id: c.id } });
       } finally {
         delete process.env.BLOB_READ_WRITE_TOKEN;
       }

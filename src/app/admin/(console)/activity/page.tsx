@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { HistoryIcon } from "lucide-react";
 import { ActivityFilter } from "@/components/admin/activity-filter";
 import { auditActionLabels, AUDIT_ACTIONS, describeChanges } from "@/components/admin/audit-labels";

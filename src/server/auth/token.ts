@@ -6,7 +6,13 @@ import { SignJWT, jwtVerify } from "jose";
  * with admins.sessionVersion (see session.ts).
  */
 
-export const SESSION_COOKIE = "mw_admin_session";
+/**
+ * Production uses the `__Host-` prefix: browsers only accept it with Secure, Path=/ and no Domain
+ * (see sessionCookieOptions), so a sibling subdomain cannot plant or overwrite the session cookie.
+ * Plain-HTTP local development cannot set Secure cookies, hence the unprefixed name there.
+ * Middleware reads the same constant (NODE_ENV is inlined at build time).
+ */
+export const SESSION_COOKIE = process.env.NODE_ENV === "production" ? "__Host-mw_admin_session" : "mw_admin_session";
 export const SESSION_TTL_SECONDS = 8 * 60 * 60;
 const ISSUER = "mywatch";
 const AUDIENCE = "mywatch-admin";

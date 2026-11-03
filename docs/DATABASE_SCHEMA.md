@@ -11,6 +11,7 @@ Indexes are created idempotently on first connection (`ensureIndexes`).
 |---|---|---|
 | `_id` | ObjectId | |
 | `slug` | string | unique, URL `/watches/<slug>` |
+| `previousSlugs` | string[] (optional) | old slugs — `/watches/<old>` permanently redirects; reserved so no other watch can reuse them |
 | `name`, `brand` | string | |
 | `brandSlug` | string | `slugify(brand)` — shop brand filter |
 | `modelNumber` | string | may be `""` |
@@ -30,8 +31,10 @@ Indexes are created idempotently on first connection (`ensureIndexes`).
 | `createdAt`, `updatedAt` | Date | |
 | `createdBy`, `updatedBy` | string \| null | admin username |
 
-Indexes: `slug_unique {slug:1} unique` · `published_featured_recent {published:1, featured:-1, createdAt:-1}` ·
-`published_category_price {published:1, category:1, price:1}` · `published_brand {published:1, brandSlug:1}` · `recent {createdAt:-1}`
+Indexes: `slug_unique {slug:1} unique` · `previous_slugs {previousSlugs:1}` ·
+`published_featured_recent {published:1, featured:-1, createdAt:-1}` · `published_recent {published:1, createdAt:-1}` ·
+`published_price {published:1, price:1}` · `published_category_price {published:1, category:1, price:1}` ·
+`published_brand {published:1, brandSlug:1}` · `updated_recent {updatedAt:-1}` · `recent {createdAt:-1}`
 
 Search uses an escaped, case-insensitive regex over name/brand/modelNumber/category/shortDescription.
 This supports partial words ("aur" → "Aurora") and is fast for catalogues of a few thousand items.
@@ -46,8 +49,6 @@ If the catalogue grows much larger, switch to an Atlas Search index.
 | `passwordHash` | string | bcrypt, cost 12 |
 | `mustChangePassword` | bool | true after bootstrap |
 | `sessionVersion` | int | bumped on logout/password change → revokes all tokens |
-| `failedLoginCount` | int | reset on success |
-| `lockedUntil` | Date \| null | set after 10 consecutive failures (15 min) |
 | `lastLoginAt`, `lastLoginIp` | Date \| null, string \| null | |
 | `passwordChangedAt` | Date \| null | |
 | `createdAt`, `updatedAt` | Date | |

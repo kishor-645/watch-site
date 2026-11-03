@@ -88,9 +88,21 @@ export async function ensureIndexes(db: Db): Promise<void> {
   await Promise.all([
     c.watches.createIndexes([
       { key: { slug: 1 }, name: "slug_unique", unique: true },
+      // Old-slug redirects + "slug reserved" check (multikey).
+      { key: { previousSlugs: 1 }, name: "previous_slugs" },
+      // Shop "featured" sort; home page featured list.
       { key: { published: 1, featured: -1, createdAt: -1 }, name: "published_featured_recent" },
+      // Shop "newest" sort.
+      { key: { published: 1, createdAt: -1 }, name: "published_recent" },
+      // Shop price sorts (both directions); related-watch padding by price.
+      { key: { published: 1, price: 1 }, name: "published_price" },
+      // Category filter + price sort; related watches (same category, nearest price).
       { key: { published: 1, category: 1, price: 1 }, name: "published_category_price" },
+      // Brand filter; brand facets.
       { key: { published: 1, brandSlug: 1 }, name: "published_brand" },
+      // Admin list (sorted by updatedAt) and sitemap.
+      { key: { updatedAt: -1 }, name: "updated_recent" },
+      // Dashboard "recently added".
       { key: { createdAt: -1 }, name: "recent" },
     ]),
     c.admins.createIndexes([{ key: { username: 1 }, name: "username_unique", unique: true }]),

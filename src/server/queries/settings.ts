@@ -11,31 +11,49 @@ import { log } from "../log";
 type Plain = Record<string, unknown>;
 const isPlain = (v: unknown): v is Plain => typeof v === "object" && v !== null && !Array.isArray(v) && !(v instanceof Date);
 
-/** Deep-merges stored values over defaults. Arrays and primitives from `stored` replace defaults. */
-export function mergeSettings(defaults: SiteSettings, stored: unknown): SiteSettings {
-  const merge = (base: unknown, over: unknown): unknown => {
-    if (!isPlain(base) || !isPlain(over)) return over === undefined ? base : over;
-    const out: Plain = { ...base };
-    for (const [k, v] of Object.entries(over)) {
-      if (k === "_id" || k === "updatedAt" || k === "updatedBy") continue;
-      out[k] = merge(base[k], v);
+const SECTIONS = Object.keys(siteSettingsSchema.shape) as (keyof SiteSettings)[];
+
+const merge = (base: unknown, over: unknown): unknown => {
+  if (!isPlain(base) || !isPlain(over)) return over === undefined ? base : over;
+  const out: Plain = { ...base };
+  for (const [k, v] of Object.entries(over)) out[k] = merge(base[k], v);
+  return out;
+};
+
+export interface MergedSettings {
+  settings: SiteSettings;
+  /** Top-level sections whose stored value failed validation and were replaced by defaults. */
+  invalidSections: (keyof SiteSettings)[];
+}
+
+/**
+ * Deep-merges stored values over defaults, validating each top-level section on its own:
+ * a bad value in one section only resets THAT section (logged and reported), so e.g. a broken
+ * SEO field never resets the WhatsApp number. Arrays and primitives from `stored` replace defaults.
+ */
+export function mergeSettings(defaults: SiteSettings, stored: unknown): MergedSettings {
+  const source = isPlain(stored) ? stored : {};
+  const out: Plain = {};
+  const invalidSections: (keyof SiteSettings)[] = [];
+  for (const section of SECTIONS) {
+    const parsed = siteSettingsSchema.shape[section].safeParse(merge(defaults[section], source[section]));
+    if (parsed.success) {
+      out[section] = parsed.data;
+    } else {
+      out[section] = defaults[section];
+      invalidSections.push(section);
+      log.error("settings.invalid_stored_section", { section, issues: parsed.error.issues.slice(0, 5) });
     }
-    return out;
-  };
-  const merged = merge(defaults, stored);
-  const parsed = siteSettingsSchema.safeParse(merged);
-  if (!parsed.success) {
-    log.error("settings.invalid_stored_document", { issues: parsed.error.issues.slice(0, 5) });
-    return defaults;
   }
-  return parsed.data;
+  return { settings: out as SiteSettings, invalidSections };
 }
 
 /** Uncached read — for admin screens and server-side validation. */
 export async function loadSettings(): Promise<PublicSettings> {
   const { settings } = await getCollections();
   const doc = await settings.findOne({ _id: "global" });
-  return { ...mergeSettings(DEFAULT_SETTINGS, doc ?? {}), updatedAt: doc?.updatedAt?.toISOString() ?? null, invalidSections: [] };
+  const merged = mergeSettings(DEFAULT_SETTINGS, doc ?? {});
+  return { ...merged.settings, updatedAt: doc?.updatedAt?.toISOString() ?? null, invalidSections: merged.invalidSections };
 }
 
 const cachedSettings = unstable_cache(loadSettings, ["site-settings-v1"], {

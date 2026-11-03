@@ -423,7 +423,6 @@ test.describe("signed in", () => {
         await page.goto(url);
         await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
         await page.screenshot({ path: path.join(SHOTS, `admin-${name}-${width}.png`), fullPage: true, animations: "disabled", timeout: 30_000 });
-        if (name === "dashboard" && width === 390) continue; // known BUG-2, asserted in the next test
         const { sw, iw } = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: innerWidth }));
         expect.soft(sw, `${url} overflows horizontally at ${width}px`).toBeLessThanOrEqual(iw);
       }
@@ -431,10 +430,7 @@ test.describe("signed in", () => {
   });
 
   test("dashboard has no horizontal overflow at 390px", async ({ page }) => {
-    // BUG-2: the "Availability / Recently added" grid has no min-w-0/grid-cols-1, so the truncated
-    // watch names in "Recently added" widen the grid track (~441px document in a 390px viewport).
-    // src/app/admin/(console)/page.tsx — `<div className="mt-6 grid gap-6 lg:grid-cols-[1fr_2fr]">`.
-    test.fail();
+    // Regression test for BUG-2 (the dashboard grid tracks were widened by truncated watch names).
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/admin");
     await expect(page.getByRole("heading", { name: "Recently added" })).toBeVisible();

@@ -100,8 +100,8 @@ export default async function DashboardPage() {
         })}
       </section>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_2fr]">
-        <section aria-labelledby="availability-heading" className="rounded-lg border border-border bg-card p-4 sm:p-5">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <section aria-labelledby="availability-heading" className="min-w-0 rounded-lg border border-border bg-card p-4 sm:p-5">
           <h2 id="availability-heading" className="font-sans text-base font-semibold tracking-normal">
             Availability
           </h2>
@@ -131,7 +131,7 @@ export default async function DashboardPage() {
           </ul>
         </section>
 
-        <section aria-labelledby="recent-heading" className="rounded-lg border border-border bg-card">
+        <section aria-labelledby="recent-heading" className="min-w-0 rounded-lg border border-border bg-card">
           <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
             <h2 id="recent-heading" className="font-sans text-base font-semibold tracking-normal">
               Recently added

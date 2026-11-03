@@ -2,20 +2,21 @@ import "server-only";
 import { del } from "@vercel/blob";
 import { handleUpload } from "@vercel/blob/client";
 import { z } from "zod";
+import { UPLOAD_ALLOWED_TYPES, UPLOAD_MAX_BYTES, UPLOAD_PATH_PREFIXES } from "@/lib/upload-rules";
 import { writeAudit, type RequestMeta } from "../audit";
 import type { AdminSession } from "../auth/session";
-import { isProjectBlobUrl } from "../blob";
-import { getCollections } from "../db";
+import { findReferencedUrls, isProjectBlobUrl } from "../blob";
 import { getBlobToken } from "../env";
 import { ApiError } from "../http";
 import { log } from "../log";
 import { LIMITS, enforceRateLimit } from "../rate-limit";
 
-export const ALLOWED_UPLOAD_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
-export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 const TOKEN_VALIDITY_MS = 10 * 60 * 1000;
-const PATHNAME = /^(watches|site)\/[^\\\u0000-\u001f]+$/;
-const isSafePathname = (p: string) => PATHNAME.test(p) && !p.split("/").some((seg) => seg === "" || seg === "." || seg === "..");
+const CONTROL_OR_BACKSLASH = /[\\\u0000-\u001f]/;
+const isSafePathname = (p: string) =>
+  UPLOAD_PATH_PREFIXES.some((prefix) => p.startsWith(prefix) && p.length > prefix.length) &&
+  !CONTROL_OR_BACKSLASH.test(p) &&
+  !p.split("/").some((seg) => seg === "" || seg === "." || seg === "..");
 
 /**
  * Only the token-exchange event is accepted. We never register `onUploadCompleted` (so no
@@ -53,7 +54,9 @@ export async function issueUploadToken(req: Request, body: UploadTokenRequest, a
     body,
     onBeforeGenerateToken: async (pathname) => {
       if (!isSafePathname(pathname)) {
-        throw new ApiError(422, "VALIDATION_ERROR", "Invalid upload path", { pathname: "Path must start with watches/ or site/" });
+        throw new ApiError(422, "VALIDATION_ERROR", "Invalid upload path", {
+          pathname: `Path must start with ${UPLOAD_PATH_PREFIXES.join(" or ")}`,
+        });
       }
       await enforceRateLimit(`upload:${admin.id}`, LIMITS.uploadTokens, "Too many uploads. Please wait a few minutes.");
       await writeAudit({
@@ -63,8 +66,8 @@ export async function issueUploadToken(req: Request, body: UploadTokenRequest, a
         ...meta,
       });
       return {
-        allowedContentTypes: ALLOWED_UPLOAD_TYPES,
-        maximumSizeInBytes: MAX_UPLOAD_BYTES,
+        allowedContentTypes: [...UPLOAD_ALLOWED_TYPES],
+        maximumSizeInBytes: UPLOAD_MAX_BYTES,
         addRandomSuffix: true,
         validUntil: Date.now() + TOKEN_VALIDITY_MS,
       };
@@ -72,18 +75,16 @@ export async function issueUploadToken(req: Request, body: UploadTokenRequest, a
   });
 }
 
-/** Deletes an uploaded blob that was never saved. Refuses URLs still referenced by data. */
+/**
+ * Deletes an uploaded blob that was never saved. Only URLs on this project's Blob store are
+ * accepted (422), and URLs still referenced by any watch or the settings are refused (409).
+ */
 export async function deleteUnsavedUpload(url: string): Promise<void> {
   const token = requireBlobToken();
   if (!isProjectBlobUrl(url)) {
     throw new ApiError(422, "VALIDATION_ERROR", "Only uploaded images can be deleted", { url: "Not an uploaded image URL" });
   }
-  const { watches, settings } = await getCollections();
-  const [watchRef, settingsDoc] = await Promise.all([
-    watches.findOne({ "images.url": url }, { projection: { _id: 1 } }),
-    settings.findOne({ _id: "global" }),
-  ]);
-  if (watchRef || (settingsDoc && JSON.stringify(settingsDoc).includes(JSON.stringify(url)))) {
+  if ((await findReferencedUrls([url])).size > 0) {
     throw new ApiError(409, "CONFLICT", "This image is in use and cannot be deleted");
   }
   try {

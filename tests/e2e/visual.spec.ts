@@ -49,10 +49,7 @@ for (const width of [1440, 390]) {
 }
 
 test("element ids are unique on public pages", async ({ page }) => {
-  // BUG-1: the mobile menu sheet renders <SearchForm autoFocus={false}>, which picks the id
-  // "header-search" — the same id as the desktop header search input — so the sheet's
-  // <label for> points at the (hidden) desktop input. src/components/layout/header-client.tsx.
-  test.fail();
+  // Regression test for BUG-1 (the mobile menu search reused the desktop #header-search id).
   const duplicates: string[] = [];
   for (const [, url] of PAGES.filter(([n]) => n !== "login")) {
     await page.goto(url);

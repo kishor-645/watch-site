@@ -21,7 +21,7 @@ export function Header({ settings }: { settings: PublicSettings }) {
         <DesktopNav />
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <SearchForm className="hidden w-48 md:block xl:w-60" />
+          <SearchForm id="header-search" className="hidden w-48 md:block xl:w-60" />
           <a
             href={whatsappHref}
             {...externalLinkProps}

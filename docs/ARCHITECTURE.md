@@ -18,7 +18,7 @@ Browser ──► wa.me/<number>?text=…   (Check Availability; number from sit
 | Concern | Choice |
 |---|---|
 | Framework | Next.js 15.5 App Router, React 19, TypeScript strict |
-| Styling | Tailwind v4 (tokens in `src/app/globals.css`), shadcn/ui (radix), lucide icons, framer-motion (minimal) |
+| Styling | Tailwind v4 (tokens in `src/app/globals.css`), shadcn/ui (radix), lucide icons; motion = CSS scroll-driven reveals gated by `prefers-reduced-motion` |
 | Database | MongoDB Atlas M0 via official `mongodb` driver |
 | Validation | zod v4 — shared by client forms and server |
 | Auth | bcryptjs (cost 12) + HS256 JWT (`jose`) in HttpOnly cookie, server-side session version check |
@@ -67,9 +67,12 @@ docs/                     this folder
 1. **Bootstrap:** empty `admins` + login with `INITIAL_ADMIN_USERNAME`/`INITIAL_ADMIN_PASSWORD` →
    account created (bcrypt) with `mustChangePassword`. No other way to create admins; no public registration;
    no hardcoded or bypass credentials.
-2. **Login:** rate limited per IP and per account (Mongo-backed counters), uniform error message,
-   constant-time comparison via bcrypt, audit logged.
-3. **Session:** JWT `{sub, username, sv}` 8 h, cookie `HttpOnly; SameSite=Lax; Secure (prod); Path=/`.
+2. **Login:** rate limited per client IP (IPv6 by /64) and per username+IP. Counters are incremented
+   atomically *before* the bcrypt check (parallel bursts can't exceed them); no account-wide lockout
+   (prevents locking the owner out). Uniform error message, timing-equalised bcrypt, audit logged.
+   Client IP comes from Vercel's `x-vercel-forwarded-for`/`x-real-ip` (the app is designed for Vercel).
+3. **Session:** JWT `{sub, username, sv}` 8 h, cookie `__Host-mw_admin_session` in production
+   (`mw_admin_session` locally), `HttpOnly; SameSite=Lax; Secure (prod); Path=/`.
    Every protected request loads the admin and requires `sv === admins.sessionVersion`.
 4. **Logout / password change** increment `sessionVersion` → all existing tokens die immediately.
 5. **CSRF:** same-origin check on every mutating API request (+ SameSite cookie, JSON-only bodies).
@@ -82,6 +85,14 @@ docs/                     this folder
 renders `settings.contact.whatsappTemplate` and returns `https://wa.me/<digits>?text=<encoded>`.
 Links open in a new tab (`target="_blank" rel="noopener noreferrer"`). Changing the number in
 Admin → Settings updates every link on the next request.
+
+## Images
+
+Uploaded images live in Vercel Blob. The project's store host is derived from `BLOB_READ_WRITE_TOKEN`
+(`<storeId>.public.blob.vercel-storage.com`); only that host is accepted on save and allowed in
+`next/image` `remotePatterns` / CSP `img-src` (a wildcard is used only when no token exists at build time).
+Blobs are deleted only when no watch or setting still references them. Old product slugs are kept in
+`previousSlugs` and permanently redirect.
 
 ## Security headers
 

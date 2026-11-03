@@ -20,12 +20,31 @@ export function formatPrice(value: number, { currencyCode = "INR", locale = "en-
   return f.format(value);
 }
 
-export function formatDate(iso: string, locale = "en-IN"): string {
-  return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
+/** The shop's time zone. Dates are always rendered in it so server and browser output match. */
+export const SHOP_TIME_ZONE = "Asia/Kolkata";
+
+export interface DateFormatOptions {
+  /** IANA time zone; defaults to SHOP_TIME_ZONE. */
+  timeZone?: string;
 }
 
-export function formatDateTime(iso: string, locale = "en-IN"): string {
-  return new Date(iso).toLocaleString(locale, {
+function formatInZone(iso: string, locale: string, timeZone: string, parts: Intl.DateTimeFormatOptions): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  try {
+    return new Intl.DateTimeFormat(locale, { ...parts, timeZone }).format(date);
+  } catch {
+    // Invalid locale/time zone from settings: fall back to the shop defaults instead of crashing a page.
+    return new Intl.DateTimeFormat("en-IN", { ...parts, timeZone: SHOP_TIME_ZONE }).format(date);
+  }
+}
+
+export function formatDate(iso: string, locale = "en-IN", { timeZone = SHOP_TIME_ZONE }: DateFormatOptions = {}): string {
+  return formatInZone(iso, locale, timeZone, { day: "numeric", month: "short", year: "numeric" });
+}
+
+export function formatDateTime(iso: string, locale = "en-IN", { timeZone = SHOP_TIME_ZONE }: DateFormatOptions = {}): string {
+  return formatInZone(iso, locale, timeZone, {
     day: "numeric",
     month: "short",
     year: "numeric",

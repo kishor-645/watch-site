@@ -8,10 +8,25 @@ import { Story } from "@/components/home/story";
 import { TrustBar } from "@/components/home/trust-bar";
 import { ShopEmpty } from "@/components/shop/shop-empty";
 import { formatPrice } from "@/lib/format";
+import { parseCatalogQuery } from "@/lib/schemas/catalog-query";
 import { absoluteUrl, productPath } from "@/lib/site-url";
 import { generalEnquiryUrl, watchEnquiryUrl } from "@/lib/whatsapp";
 import { getSiteSettings } from "@/server/queries/settings";
-import { getFeaturedWatches, getPublishedWatchBySlug } from "@/server/queries/watches";
+import { getFeaturedWatches, getPublishedWatchBySlug, listPublishedWatches } from "@/server/queries/watches";
+
+const HOME_GRID_SIZE = 8;
+
+/**
+ * Watches for the home grid: the ones marked "featured" in the admin ("Highlighted on the home
+ * page"), or — if none are — the newest published watches, so the home page never looks empty
+ * while the catalogue has stock. An empty list means the catalogue itself is empty.
+ */
+async function homeWatches() {
+  const featured = await getFeaturedWatches(HOME_GRID_SIZE);
+  if (featured.length > 0) return { watches: featured, isFallback: false };
+  const newest = await listPublishedWatches(parseCatalogQuery({ sort: "newest" }));
+  return { watches: newest.items.slice(0, HOME_GRID_SIZE), isFallback: true };
+}
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
@@ -20,12 +35,12 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const settings = await getSiteSettings();
   const { home, general, catalog } = settings;
-  const [featured, chosen] = await Promise.all([
-    getFeaturedWatches(8),
+  const [{ watches, isFallback }, chosen] = await Promise.all([
+    homeWatches(),
     home.heroWatchSlug ? getPublishedWatchBySlug(home.heroWatchSlug) : Promise.resolve(null),
   ]);
 
-  const heroWatch = chosen ?? featured[0] ?? null;
+  const heroWatch = chosen ?? watches[0] ?? null;
   const heroImage = home.heroImageUrl
     ? { url: home.heroImageUrl, alt: heroWatch?.name ?? "" }
     : heroWatch?.images[0]
@@ -54,12 +69,13 @@ export default async function HomePage() {
       />
       <TrustBar items={home.trustItems} />
 
-      {featured.length > 0 ? (
+      {watches.length > 0 ? (
         <FeaturedWatches
-          title={home.featuredTitle}
-          subtitle={home.featuredSubtitle}
-          watches={featured}
+          title={isFallback ? "New arrivals" : home.featuredTitle}
+          subtitle={isFallback ? "The latest additions to the collection." : home.featuredSubtitle}
+          watches={watches}
           currency={currency}
+          viewAllHref={isFallback ? "/shop?sort=newest" : "/shop"}
         />
       ) : (
         <div className={`${container} py-20`}>
@@ -67,7 +83,7 @@ export default async function HomePage() {
         </div>
       )}
 
-      {featured.length > 0 && <ShopByCategory categories={catalog.categories} />}
+      {watches.length > 0 && <ShopByCategory categories={catalog.categories} />}
       <Story title={home.storyTitle} body={home.storyBody} imageUrl={home.storyImageUrl} />
       <CtaBand title={home.ctaTitle} body={home.ctaBody} whatsappHref={generalHref} />
     </>

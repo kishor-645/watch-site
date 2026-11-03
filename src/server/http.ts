@@ -65,11 +65,12 @@ export async function readJson<S extends z.ZodTypeAny>(req: Request, schema: S):
   }
   const length = Number(req.headers.get("content-length") ?? 0);
   if (length > MAX_JSON_BYTES) throw new ApiError(413, "PAYLOAD_TOO_LARGE", "Request body is too large");
-  const raw = await req.text();
-  if (raw.length > MAX_JSON_BYTES) throw new ApiError(413, "PAYLOAD_TOO_LARGE", "Request body is too large");
+  // Measure bytes, not UTF-16 code units (Content-Length may be absent or wrong with chunked bodies).
+  const bytes = await req.arrayBuffer();
+  if (bytes.byteLength > MAX_JSON_BYTES) throw new ApiError(413, "PAYLOAD_TOO_LARGE", "Request body is too large");
   let body: unknown;
   try {
-    body = JSON.parse(raw);
+    body = JSON.parse(new TextDecoder().decode(bytes));
   } catch {
     throw new ApiError(400, "BAD_REQUEST", "Malformed JSON");
   }
@@ -80,10 +81,18 @@ export async function readJson<S extends z.ZodTypeAny>(req: Request, schema: S):
   return result.data;
 }
 
+/**
+ * Client address for rate limiting and audit logs. The app is designed to run on Vercel, whose
+ * edge overwrites these headers with the real client address (clients cannot spoof them there).
+ * Order: `x-vercel-forwarded-for` → `x-real-ip` → first `x-forwarded-for` entry. Behind any
+ * other proxy, make sure it sets/overwrites one of them, or IP-based limits become per-request.
+ */
 export function clientIp(req: Request): string | null {
-  const fwd = req.headers.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0]!.trim().slice(0, 64) || null;
-  return req.headers.get("x-real-ip")?.slice(0, 64) ?? null;
+  for (const name of ["x-vercel-forwarded-for", "x-real-ip", "x-forwarded-for"]) {
+    const value = req.headers.get(name)?.split(",")[0]?.trim().slice(0, 64);
+    if (value) return value;
+  }
+  return null;
 }
 
 export function userAgent(req: Request): string | null {

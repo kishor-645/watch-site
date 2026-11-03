@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { parseCatalogQuery } from "@/lib/schemas/catalog-query";
 import { siteSettingsSchema } from "@/lib/schemas/settings";
 import { watchInputSchema, watchPatchSchema } from "@/lib/schemas/watch";
@@ -123,6 +123,41 @@ describe("database foundation", () => {
     const related = await q.getRelatedWatches(one!.id, one!.category, one!.price, 4);
     expect(related).toHaveLength(4);
     expect(related.some((w) => w.id === one!.id)).toBe(false);
+    // Same category first (nearest price first), then other categories.
+    const all = await c.watches.find({ published: true }).toArray();
+    const sameCat = all.filter((d) => d.category === one!.category && d._id.toHexString() !== one!.id);
+    const firstN = related.slice(0, Math.min(sameCat.length, 4));
+    expect(firstN.every((w) => w.category === one!.category)).toBe(true);
+    const dist = firstN.map((w) => Math.abs(w.price - one!.price));
+    expect(dist).toEqual([...dist].sort((a, b) => a - b));
+    const expected = sameCat.map((d) => Math.abs(d.price - one!.price)).sort((a, b) => a - b).slice(0, firstN.length);
+    expect(dist).toEqual(expected);
+    expect(related.slice(firstN.length).every((w) => w.category !== one!.category)).toBe(true);
+  });
+
+  it("featured list contains only featured, published watches", async () => {
+    const { getCollections } = await import("@/server/db");
+    const q = await import("@/server/queries/watches");
+    const c = await getCollections();
+    const expected = await c.watches.countDocuments({ published: true, featured: true });
+    expect(expected).toBeGreaterThan(0);
+    const featured = await q.getFeaturedWatches(48);
+    expect(featured).toHaveLength(expected);
+    expect(featured.every((w) => w.featured && w.published)).toBe(true);
+    expect(await q.getFeaturedWatches(1)).toHaveLength(1);
+  });
+
+  it("brand facets use a stable label for each brand slug", async () => {
+    const { getCollections } = await import("@/server/db");
+    const q = await import("@/server/queries/watches");
+    const c = await getCollections();
+    const sample = await c.watches.findOne({ published: true });
+    await c.watches.updateOne({ _id: sample!._id }, { $set: { brand: sample!.brand.toUpperCase() } });
+    const label = (await q.getCatalogFacets()).brands.find((b) => b.slug === sample!.brandSlug)!.label;
+    for (let i = 0; i < 3; i++) expect((await q.getCatalogFacets()).brands.find((b) => b.slug === sample!.brandSlug)!.label).toBe(label);
+    // Uppercase sorts before mixed case → deterministic choice.
+    expect(label).toBe(sample!.brand.toUpperCase());
+    await c.watches.updateOne({ _id: sample!._id }, { $set: { brand: sample!.brand } });
   });
 
   it("unpublished watches are hidden from public queries", async () => {
@@ -150,6 +185,40 @@ describe("database foundation", () => {
     const s = await loadSettings();
     expect(s.general.siteName).toBe("Yash Watches");
     expect(s.updatedAt).not.toBeNull();
+    expect(s.invalidSections).toEqual([]);
+  });
+
+  it("an invalid stored section falls back alone and is reported in invalidSections", async () => {
+    const { getCollections } = await import("@/server/db");
+    const { loadSettings, getSiteSettings } = await import("@/server/queries/settings");
+    const c = await getCollections();
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      await c.settings.updateOne(
+        { _id: "global" },
+        {
+          $set: {
+            "contact.whatsappNumber": "919999988888",
+            "seo.title": "x".repeat(500), // too long → whole `seo` section invalid
+            "social.instagram": "not a url",
+          },
+        },
+      );
+      for (const s of [await loadSettings(), await getSiteSettings()]) {
+        expect(s.contact.whatsappNumber).toBe("919999988888");
+        expect(s.general.siteName).toBe("Yash Watches");
+        expect(s.seo).toEqual(DEFAULT_SETTINGS.seo);
+        expect(s.social).toEqual(DEFAULT_SETTINGS.social);
+        expect([...s.invalidSections].sort()).toEqual(["seo", "social"]);
+      }
+      expect(error.mock.calls.flat().join(" ")).toContain("settings.invalid_stored_section");
+    } finally {
+      error.mockRestore();
+      await c.settings.updateOne(
+        { _id: "global" },
+        { $set: { seo: DEFAULT_SETTINGS.seo, social: DEFAULT_SETTINGS.social, contact: DEFAULT_SETTINGS.contact } },
+      );
+    }
   });
 
   it("admin stats count by availability", async () => {

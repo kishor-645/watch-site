@@ -11,11 +11,13 @@ export function FeaturedWatches({
   subtitle,
   watches,
   currency,
+  viewAllHref = "/shop",
 }: {
   title: string;
   subtitle: string;
   watches: Watch[];
   currency: CurrencyOptions;
+  viewAllHref?: string;
 }) {
   if (!watches.length) return null;
   return (
@@ -24,7 +26,7 @@ export function FeaturedWatches({
         <Reveal className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <SectionHeading id="featured-heading" title={title || "Featured watches"} description={subtitle || undefined} />
           <Link
-            href="/shop"
+            href={viewAllHref}
             className="group inline-flex shrink-0 items-center gap-2 text-[0.7rem] font-medium uppercase tracking-[0.26em] text-foreground/80 transition-colors hover:text-gold"
           >
             View all watches

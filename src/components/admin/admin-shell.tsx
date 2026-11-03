@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import {
   ActivityIcon,
   ExternalLinkIcon,
@@ -94,7 +94,7 @@ export function AdminShell({
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-background font-sans md:grid md:grid-cols-[15rem_1fr]">
+    <div className="min-h-screen bg-background font-sans md:grid md:grid-cols-[15rem_minmax(0,1fr)]">
       <a
         href="#admin-main"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-primary-foreground"

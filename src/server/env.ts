@@ -46,5 +46,3 @@ export function getAuthEnv() {
 export function getBlobToken(): string | undefined {
   return process.env.BLOB_READ_WRITE_TOKEN || undefined;
 }
-
-export const isProduction = process.env.NODE_ENV === "production";

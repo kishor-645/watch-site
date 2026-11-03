@@ -31,8 +31,6 @@ export interface AdminDoc {
   mustChangePassword: boolean;
   /** Incremented on logout / password change — invalidates every issued session token. */
   sessionVersion: number;
-  failedLoginCount: number;
-  lockedUntil: Date | null;
   lastLoginAt: Date | null;
   lastLoginIp: string | null;
   passwordChangedAt: Date | null;

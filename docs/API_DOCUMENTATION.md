@@ -47,8 +47,12 @@ Body `LoginInput`: `{ "username": string, "password": string }`
   `INITIAL_ADMIN_USERNAME` / `INITIAL_ADMIN_PASSWORD` (constant-time compare), the admin is
   created with a bcrypt hash and `mustChangePassword: true`.
 - Failed attempts → identical 401 `"Incorrect username or password"` whether the user exists or not.
-- Limits: 5 failures / 15 min per IP; 10 consecutive failures per account → account locked 15 min.
-  Both return 429 with `Retry-After`.
+- Limits (counted atomically **before** the password check, so parallel bursts cannot exceed them):
+  10 attempts / 15 min per client IP (IPv6 bucketed by /64) and 5 attempts / 15 min per
+  username + IP. Both counters reset on success. Exceeding either → 429 with `Retry-After` and the
+  same message for existing and unknown usernames. There is **no account-wide lockout** (it would
+  let anyone lock the owner out). Client IP comes from Vercel's `x-vercel-forwarded-for` / `x-real-ip`.
+- Bootstrap is refused (generic 401) if `INITIAL_ADMIN_PASSWORD` is shorter than 12 characters.
 - Success → sets cookie, `200 { data: { username, mustChangePassword } }`.
 
 ### `POST /api/auth/logout` — admin †

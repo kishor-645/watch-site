@@ -44,6 +44,7 @@ import {
   parseMoney,
   remapErrors,
   SPEC_KEYS,
+  SPEC_MAX_LENGTH,
   stateFromWatch,
   toPayload,
   type FormState,
@@ -445,7 +446,7 @@ export function WatchForm({ watch, categories, movements, brands, currency }: Wa
                 <Input
                   {...a11yProps(path, errors[path])}
                   value={state.specs[k]}
-                  maxLength={160}
+                  maxLength={SPEC_MAX_LENGTH[k]}
                   onChange={(e) => {
                     const value = e.target.value;
                     setState((s) => ({ ...s, specs: { ...s.specs, [k]: value } }));

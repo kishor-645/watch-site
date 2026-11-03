@@ -4,6 +4,9 @@ import { Brand } from "@/components/layout/wordmark";
 import { NotFoundContent } from "@/components/site/not-found-content";
 import { getSiteSettings } from "@/server/queries/settings";
 
+// Reads settings: render per request (never prerendered at build with default settings).
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Page not found",
   robots: { index: false },

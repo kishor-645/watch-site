@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { ExternalLinkIcon, InfoIcon, Loader2Icon, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -364,7 +364,7 @@ export function SettingsForm({
                   value={state.home.heroWatchSlug}
                   onChange={(e) => setField("home", "heroWatchSlug", e.target.value)}
                 >
-                  <option value="">Automatic (first featured watch)</option>
+                  <option value="">Automatic (first watch shown on the home page)</option>
                   {state.home.heroWatchSlug && !watches.some((w) => w.slug === state.home.heroWatchSlug) && (
                     <option value={state.home.heroWatchSlug}>{state.home.heroWatchSlug} (not published)</option>
                   )}
@@ -380,7 +380,10 @@ export function SettingsForm({
             {text("home", "heroSubtitle", "Subtitle", { textarea: true, rows: 3, max: 300 })}
             {image("home", "heroImageUrl", "Hero image", "Optional background image. If empty, the hero watch's primary image is used.")}
           </Section>
-          <Section title="Featured watches">
+          <Section
+            title="Featured watches"
+            description="Shows the watches marked “Featured”. If none are, the newest watches are shown as “New arrivals”."
+          >
             <div className="grid gap-4 sm:grid-cols-2">
               {text("home", "featuredTitle", "Title", { max: 80 })}
               {text("home", "featuredSubtitle", "Subtitle", { max: 200 })}

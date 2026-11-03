@@ -2,6 +2,7 @@ import {
   MAX_PRICE,
   specLabels,
   watchInputSchema,
+  watchSpecsSchema,
   type Availability,
   type Gender,
   type WatchInput,
@@ -15,6 +16,11 @@ import { type FieldErrors, type ImageItem, zodFieldErrors } from "./form-model";
 export const MAX_FEATURES = 12;
 export const MAX_EXTRA_SPECS = 20;
 export const SPEC_KEYS = Object.keys(specLabels) as (keyof WatchSpecs)[];
+
+/** Per-field `maxLength` for the spec inputs, read from `watchSpecsSchema` (the single source of truth). */
+export const SPEC_MAX_LENGTH = Object.fromEntries(
+  SPEC_KEYS.map((k) => [k, watchSpecsSchema.shape[k].unwrap().maxLength ?? 160]),
+) as Record<keyof WatchSpecs, number>;
 
 export interface Row {
   key: string;

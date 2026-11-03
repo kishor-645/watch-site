@@ -1,7 +1,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
-import type { Filter, Sort } from "mongodb";
+import { ObjectId, type Filter, type Sort } from "mongodb";
 import { AVAILABLE_STATES } from "@/lib/schemas/watch";
 import type { CatalogQuery } from "@/lib/schemas/catalog-query";
 import type { CatalogFacets, Paginated, Watch } from "@/lib/types";
@@ -12,7 +12,8 @@ import type { WatchDoc } from "../models";
 
 /*
  * PUBLIC catalog reads. Only `published: true` watches are ever returned from this module.
- * All functions are cached under the "watches" tag and return plain JSON-safe DTOs.
+ * Functions are cached under the "watches" tag (except free-text search) and return plain
+ * JSON-safe DTOs.
  */
 
 const opts = { tags: [CACHE_TAGS.watches], revalidate: CACHE_REVALIDATE_SECONDS };
@@ -45,25 +46,31 @@ const SORTS: Record<CatalogQuery["sort"], Sort> = {
   "price-desc": { price: -1, _id: -1 },
 };
 
-export const listPublishedWatches = unstable_cache(
-  async (query: CatalogQuery): Promise<Paginated<Watch>> => {
-    const { watches } = await getCollections();
-    const filter = buildCatalogFilter(query);
-    const pageSize = Math.min(Math.max(query.pageSize, 1), 48);
-    const total = await watches.countDocuments(filter);
-    const pageCount = Math.max(1, Math.ceil(total / pageSize));
-    const page = Math.min(Math.max(query.page, 1), pageCount);
-    const docs = await watches
-      .find(filter)
-      .sort(SORTS[query.sort])
-      .skip((page - 1) * pageSize)
-      .limit(pageSize)
-      .toArray();
-    return { items: docs.map(toWatch), total, page, pageSize, pageCount };
-  },
-  ["watches-list-v1"],
-  opts,
-);
+async function queryPublishedWatches(query: CatalogQuery): Promise<Paginated<Watch>> {
+  const { watches } = await getCollections();
+  const filter = buildCatalogFilter(query);
+  const pageSize = Math.min(Math.max(query.pageSize, 1), 48);
+  const total = await watches.countDocuments(filter);
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(Math.max(query.page, 1), pageCount);
+  const docs = await watches
+    .find(filter)
+    .sort(SORTS[query.sort])
+    .skip((page - 1) * pageSize)
+    .limit(pageSize)
+    .toArray();
+  return { items: docs.map(toWatch), total, page, pageSize, pageCount };
+}
+
+const cachedPublishedWatches = unstable_cache(queryPublishedWatches, ["watches-list-v1"], opts);
+
+/**
+ * Shop listing. Filter-only queries (a small, bounded key space) are cached; free-text searches
+ * bypass the data cache so arbitrary `q` values cannot flood it with one entry per string.
+ */
+export function listPublishedWatches(query: CatalogQuery): Promise<Paginated<Watch>> {
+  return query.q.trim() ? queryPublishedWatches(query) : cachedPublishedWatches(query);
+}
 
 const cachedBySlug = unstable_cache(
   async (slug: string): Promise<Watch | null> => {
@@ -77,33 +84,61 @@ const cachedBySlug = unstable_cache(
 /** Deduplicated per request (generateMetadata + page). */
 export const getPublishedWatchBySlug = cache((slug: string) => cachedBySlug(slug.toLowerCase()));
 
+/** Published watches marked `featured` only (newest first) — no padding with other watches. */
 export const getFeaturedWatches = unstable_cache(
   async (limit = 8): Promise<Watch[]> => {
     const { watches } = await getCollections();
-    const docs = await watches.find({ published: true }).sort(SORTS.featured).limit(limit).toArray();
+    const docs = await watches
+      .find({ published: true, featured: true })
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(Math.min(Math.max(limit, 1), 48))
+      .toArray();
     return docs.map(toWatch);
   },
-  ["watches-featured-v1"],
+  ["watches-featured-v2"],
   opts,
 );
 
-/** Same category first, ordered by closest price; padded with other watches. */
+const CARD_PROJECTION = { description: 0, features: 0, extraSpecs: 0 } as const;
+
+/**
+ * Up to `limit` docs matching `filter`, closest in price to `price`. Two bounded, index-backed
+ * queries (nearest below and nearest above) merged by distance — never a collection scan.
+ */
+async function nearestByPrice(filter: Filter<WatchDoc>, price: number, limit: number): Promise<WatchDoc[]> {
+  if (limit <= 0) return [];
+  const { watches } = await getCollections();
+  const [below, above] = await Promise.all([
+    watches.find({ ...filter, price: { $lte: price } }, { projection: CARD_PROJECTION }).sort({ price: -1, _id: 1 }).limit(limit).toArray(),
+    watches.find({ ...filter, price: { $gt: price } }, { projection: CARD_PROJECTION }).sort({ price: 1, _id: 1 }).limit(limit).toArray(),
+  ]);
+  const out: WatchDoc[] = [];
+  let i = 0;
+  let j = 0;
+  while (out.length < limit && (i < below.length || j < above.length)) {
+    const b = below[i];
+    const a = above[j];
+    if (b && (!a || price - b.price <= a.price - price)) {
+      out.push(b);
+      i++;
+    } else {
+      out.push(a!);
+      j++;
+    }
+  }
+  return out;
+}
+
+/** Same category first, ordered by closest price; padded with other categories (also by price). */
 export const getRelatedWatches = unstable_cache(
   async (watchId: string, category: string, price: number, limit = 4): Promise<Watch[]> => {
-    const { watches } = await getCollections();
-    const docs = await watches
-      .find({ published: true }, { projection: { description: 0, features: 0, extraSpecs: 0 } })
-      .limit(200)
-      .toArray();
-    const others = docs.filter((d) => d._id.toHexString() !== watchId);
-    const byDistance = (a: WatchDoc, b: WatchDoc) => Math.abs(a.price - price) - Math.abs(b.price - price);
-    const same = others.filter((d) => d.category === category).sort(byDistance);
-    const rest = others.filter((d) => d.category !== category).sort(byDistance);
-    return [...same, ...rest].slice(0, limit).map((d) =>
-      toWatch({ ...d, description: "", features: [], extraSpecs: [] }),
-    );
+    const max = Math.min(Math.max(limit, 1), 12);
+    const notSelf: Filter<WatchDoc> = /^[a-f0-9]{24}$/i.test(watchId) ?{ _id: { $ne: new ObjectId(watchId) } } : {};
+    const same = await nearestByPrice({ published: true, category, ...notSelf }, price, max);
+    const rest = await nearestByPrice({ published: true, category: { $ne: category }, ...notSelf }, price, max - same.length);
+    return [...same, ...rest].map((d) => toWatch({ ...d, description: "", features: [], extraSpecs: [] }));
   },
-  ["watches-related-v1"],
+  ["watches-related-v2"],
   opts,
 );
 
@@ -114,6 +149,8 @@ export const getCatalogFacets = unstable_cache(
       watches
         .aggregate<{ _id: string; label: string; count: number }>([
           { $match: { published: true } },
+          // Deterministic label when spellings differ for one slug ("TAG Heuer" vs "Tag Heuer").
+          { $sort: { brandSlug: 1, brand: 1, _id: 1 } },
           { $group: { _id: "$brandSlug", label: { $first: "$brand" }, count: { $sum: 1 } } },
           { $sort: { label: 1 } },
         ])

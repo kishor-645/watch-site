@@ -33,8 +33,12 @@ export const genderLabels: Record<Gender, string> = {
 export const MAX_PRICE = 100_000_000;
 export const MAX_IMAGES = 10;
 
-/** Hosts that product/site images may be served from. Keep in sync with next.config.ts. */
-const ALLOWED_IMAGE_HOSTS: RegExp[] = [/^images\.unsplash\.com$/, /\.public\.blob\.vercel-storage\.com$/];
+/**
+ * Hosts that product/site images may be served from. Keep in sync with next.config.ts
+ * (`remotePatterns` `*.public.blob.vercel-storage.com` matches exactly one DNS label).
+ * The server additionally pins Blob URLs to this project's own store (src/server/blob.ts).
+ */
+const ALLOWED_IMAGE_HOSTS: RegExp[] = [/^images\.unsplash\.com$/i, /^[a-z0-9-]+\.public\.blob\.vercel-storage\.com$/i];
 
 export function isAllowedImageUrl(value: string): boolean {
   try {

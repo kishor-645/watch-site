@@ -41,9 +41,9 @@ export default async function AccountPage() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
         <Section title="Account details">
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 text-sm">
+          <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2.5 text-sm">
             <dt className="text-muted-foreground">Username</dt>
             <dd className="font-medium">{profile?.username ?? admin.username}</dd>
             <dt className="text-muted-foreground">Created</dt>

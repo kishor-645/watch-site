@@ -54,14 +54,25 @@ export function DesktopNav() {
 }
 
 /** GET form to /shop?q= — works without JavaScript; `next/form` adds client-side navigation. */
-export function SearchForm({ className, autoFocus, onSubmit }: { className?: string; autoFocus?: boolean; onSubmit?: () => void }) {
+export function SearchForm({
+  id,
+  className,
+  autoFocus,
+  onSubmit,
+}: {
+  /** Must be unique on the page: the header and the mobile menu each render a search form. */
+  id: string;
+  className?: string;
+  autoFocus?: boolean;
+  onSubmit?: () => void;
+}) {
   return (
     <Form action="/shop" role="search" className={cn("relative", className)} onSubmit={onSubmit}>
-      <label htmlFor={autoFocus ? "mobile-search" : "header-search"} className="sr-only">
+      <label htmlFor={id} className="sr-only">
         Search watches
       </label>
       <input
-        id={autoFocus ? "mobile-search" : "header-search"}
+        id={id}
         name="q"
         type="search"
         placeholder="Search watches"
@@ -105,7 +116,7 @@ export function MobileMenu({
           <SheetDescription className={cn("text-xs", !tagline && "sr-only")}>{tagline || "Site menu"}</SheetDescription>
         </SheetHeader>
         <div className="px-6 pt-5">
-          <SearchForm autoFocus={false} onSubmit={close} />
+          <SearchForm id="mobile-menu-search" onSubmit={close} />
         </div>
         <nav aria-label="Mobile" className="flex-1 overflow-y-auto px-6 py-4">
           <ul className="flex flex-col">

@@ -2,12 +2,23 @@ import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV !== "production";
 
+/**
+ * Pin images to this project's own Blob store when the token is available at build time
+ * (`vercel_blob_rw_<storeId>_<secret>` → `<storeid>.public.blob.vercel-storage.com`, same parsing
+ * as src/server/blob.ts). Without it (e.g. local builds) any Blob store host is allowed.
+ */
+const blobStoreId = process.env.BLOB_READ_WRITE_TOKEN?.split("_")[3];
+const blobImageHost =
+  blobStoreId && /^[a-z0-9]+$/i.test(blobStoreId)
+    ? `${blobStoreId.toLowerCase()}.public.blob.vercel-storage.com`
+    : "*.public.blob.vercel-storage.com";
+
 // Inline scripts/styles are required by Next.js App Router hydration without a nonce setup.
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://images.unsplash.com https://*.public.blob.vercel-storage.com",
+  `img-src 'self' data: blob: https://images.unsplash.com https://${blobImageHost}`,
   "font-src 'self' data:",
   // Vercel Blob client uploads PUT directly to blob storage.
   "connect-src 'self' https://vercel.com/api/blob/ https://*.vercel-storage.com",
@@ -33,7 +44,7 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
-      { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
+      { protocol: "https", hostname: blobImageHost },
     ],
   },
   async headers() {

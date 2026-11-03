@@ -17,8 +17,6 @@ export async function signInAsNewAdmin(username = "editor", opts: { mustChangePa
     passwordHash: "!",
     mustChangePassword: opts.mustChangePassword ?? false,
     sessionVersion: 1,
-    failedLoginCount: 0,
-    lockedUntil: null,
     lastLoginAt: null,
     lastLoginIp: null,
     passwordChangedAt: null,

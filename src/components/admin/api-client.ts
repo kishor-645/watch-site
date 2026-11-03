@@ -157,10 +157,3 @@ export const api = {
   // Mutations always send a JSON body ({} when empty) so content-type checks never trip.
   delete: <T>(url: string, body?: unknown, opts?: RequestOptions) => apiRequest<T>("DELETE", url, body ?? {}, opts),
 };
-
-/** Human-friendly message for a failed result (auth redirects get a neutral message). */
-export function errorMessage(error: ApiError): string {
-  if (error.code === "UNAUTHORIZED") return "Your session has ended. Redirecting to sign in…";
-  if (error.code === "PASSWORD_CHANGE_REQUIRED") return "Please change your password first.";
-  return error.message || "Something went wrong. Please try again.";
-}

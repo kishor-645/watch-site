@@ -56,12 +56,16 @@ export function ProductCard({
           />
         )}
         {secondary && (
+          // Hover image: only displayed on hover-capable pointers. A lazy image with display:none is
+          // never fetched, so touch devices don't download it. (Tailwind v4's group-hover is also
+          // limited to (hover: hover), so the primary image never fades out on touch.)
           <Image
             src={secondary.url}
             alt=""
             fill
+            loading="lazy"
             sizes={sizes}
-            className="object-cover opacity-0 transition-opacity duration-700 ease-out group-hover:opacity-100"
+            className="hidden object-cover opacity-0 transition-opacity duration-700 ease-out group-hover:opacity-100 [@media(hover:hover)]:block"
           />
         )}
       </Link>

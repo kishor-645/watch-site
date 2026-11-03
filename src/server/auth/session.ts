@@ -27,7 +27,7 @@ export const getCurrentAdmin = cache(async (): Promise<AdminSession | null> => {
   const { admins } = await getCollections();
   const admin = await admins.findOne(
     { _id },
-    { projection: { username: 1, sessionVersion: 1, mustChangePassword: 1, lockedUntil: 1 } },
+    { projection: { username: 1, sessionVersion: 1, mustChangePassword: 1 } },
   );
   if (!admin || admin.sessionVersion !== claims.sv) return null;
   return {

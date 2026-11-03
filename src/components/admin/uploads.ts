@@ -1,4 +1,5 @@
 import { put } from "@vercel/blob/client";
+import { UPLOAD_ALLOWED_TYPES, UPLOAD_MAX_BYTES } from "@/lib/upload-rules";
 import { api, failureFromResponse, handleAuthError, NETWORK_ERROR_MESSAGE } from "./api-client";
 
 /*
@@ -11,8 +12,8 @@ import { api, failureFromResponse, handleAuthError, NETWORK_ERROR_MESSAGE } from
  */
 
 export const UPLOAD_ENDPOINT = "/api/admin/uploads";
-export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"] as const;
-export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+export const ALLOWED_IMAGE_TYPES = UPLOAD_ALLOWED_TYPES;
+export const MAX_IMAGE_BYTES = UPLOAD_MAX_BYTES;
 export const IMAGE_ACCEPT = ALLOWED_IMAGE_TYPES.join(",");
 export const STORAGE_NOT_CONFIGURED = "Image storage is not configured — connect a Vercel Blob store.";
 export const ALLOWED_URL_HINT = "Use an https:// link from images.unsplash.com or your Vercel Blob store.";

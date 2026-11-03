@@ -24,6 +24,13 @@ export function useShop(): ShopState {
 /**
  * The URL is the single source of truth: filters only change the query string and the server
  * re-renders the results. `query` is the server-parsed `CatalogQuery` for this request.
+ *
+ * `navigate` is the only place the shop calls the router: one `router.push`, and nothing syncs the
+ * URL back. The /shop route deliberately has no `loading.tsx`: in production a loading boundary
+ * makes Next 15 serve `/shop?…` navigations from an "aliased" (search-param-less) prefetch entry
+ * that only carries the loading state, and the page data is then fetched from inside the suspended
+ * render and applied by a separate server-patch action. That path occasionally left a navigation
+ * suspended forever (BUG-3: response received, URL never updated, results stuck dimmed).
  */
 export function ShopStateProvider({ query, children }: { query: CatalogQuery; children: React.ReactNode }) {
   const router = useRouter();
@@ -32,6 +39,7 @@ export function ShopStateProvider({ query, children }: { query: CatalogQuery; ch
   const navigate = useCallback(
     (patch: Partial<CatalogQuery>) => {
       const qs = serializeCatalogQuery({ ...query, page: 1, ...patch });
+      if (qs === serializeCatalogQuery(query)) return; // nothing changed: don't start a navigation
       startTransition(() => router.push(qs ? `/shop?${qs}` : "/shop", { scroll: false }));
     },
     [query, router],
