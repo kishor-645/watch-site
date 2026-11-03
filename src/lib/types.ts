@@ -1,65 +1,105 @@
-export type WatchCategory = "chronograph" | "diver" | "skeleton" | "dress" | "everyday";
-export type Gender = "men" | "women" | "unisex";
-export type Movement = "swiss-quartz" | "automatic" | "quartz" | "mechanical-hand-wound";
+import type { WatchData } from "@/lib/schemas/watch";
+import type { SiteSettings } from "@/lib/schemas/settings";
 
-export interface WatchSpecs {
-  caseSize: string; // e.g. "41mm"
-  caseMaterial: string;
-  movement: string; // human readable, e.g. "Swiss quartz chronograph"
-  waterResistance: string; // e.g. "100m"
-  crystal: string;
-  dial: string;
-  strap: string;
-  thickness?: string;
-  lugWidth?: string;
-  powerReserve?: string;
-  warranty: string;
-}
+export type { Availability, Gender, WatchData, WatchImage, WatchInput, WatchPatch, WatchSpecs } from "@/lib/schemas/watch";
+export type { CatalogOption, SiteSettings } from "@/lib/schemas/settings";
+export type { CatalogQuery, SortKey } from "@/lib/schemas/catalog-query";
 
-export interface Watch {
+/** Watch as returned to UI code (server components and admin API). Dates are ISO strings. */
+export interface Watch extends Omit<WatchData, "slug"> {
   id: string;
   slug: string;
-  name: string;
-  brand: string;
-  category: WatchCategory;
-  gender: Gender;
-  movementType: Movement;
-  price: number; // INR
-  compareAtPrice?: number; // INR, original price if on sale
-  rating: number; // 0-5
-  reviewCount: number;
-  images: string[]; // first = primary, second = hover image
-  shortDescription: string;
-  description: string; // may contain paragraphs separated by \n\n
-  features: string[];
-  specs: WatchSpecs;
-  inStock: boolean;
-  isFlagship?: boolean;
-  isMostLoved?: boolean;
-  isNew?: boolean;
-  tags?: string[];
+  /** slugify(brand) — used for brand filters in shop URLs. */
+  brandSlug: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface Collection {
-  slug: WatchCategory;
-  title: string;
-  description: string;
-  image: string;
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  pageCount: number;
 }
 
-export interface BlogPost {
-  slug: string;
-  title: string;
-  excerpt: string;
-  content: string; // paragraphs separated by \n\n
-  coverImage: string;
-  author: string;
-  date: string; // ISO date
-  readingTime: string;
-  category: string;
+export interface CatalogFacets {
+  brands: { slug: string; label: string; count: number }[];
+  priceBounds: { min: number; max: number };
 }
 
-export interface CartItem {
-  watchId: string;
-  quantity: number;
+export interface PublicSettings extends SiteSettings {
+  updatedAt: string | null;
+  /** Stored sections that failed validation and were replaced by defaults (admin should re-save). */
+  invalidSections: string[];
 }
+
+export interface AdminProfile {
+  id: string;
+  username: string;
+  mustChangePassword: boolean;
+  lastLoginAt: string | null;
+  passwordChangedAt: string | null;
+  createdAt: string;
+}
+
+export interface DashboardStats {
+  total: number;
+  published: number;
+  drafts: number;
+  featured: number;
+  available: number; // in_stock + limited + pre_order (published or not)
+  unavailable: number; // sold_out
+  byAvailability: Record<import("@/lib/schemas/watch").Availability, number>;
+  recent: Watch[];
+}
+
+export type AuditAction =
+  | "auth.login"
+  | "auth.login_failed"
+  | "auth.logout"
+  | "auth.password_change"
+  | "auth.bootstrap"
+  | "watch.create"
+  | "watch.update"
+  | "watch.delete"
+  | "watch.price_change"
+  | "watch.publish"
+  | "watch.unpublish"
+  | "catalog.seed"
+  | "settings.update"
+  | "upload.create";
+
+export interface AuditLogEntry {
+  id: string;
+  at: string;
+  action: AuditAction;
+  actor: { id: string | null; username: string | null };
+  entity: { type: "watch" | "settings" | "admin" | "upload" | null; id: string | null; label: string | null };
+  changes: Record<string, { from: unknown; to: unknown }> | null;
+  ip: string | null;
+  userAgent: string | null;
+}
+
+export type ApiErrorCode =
+  | "BAD_REQUEST"
+  | "VALIDATION_ERROR"
+  | "UNAUTHORIZED"
+  | "FORBIDDEN"
+  | "PASSWORD_CHANGE_REQUIRED"
+  | "NOT_FOUND"
+  | "CONFLICT"
+  | "RATE_LIMITED"
+  | "PAYLOAD_TOO_LARGE"
+  | "UNSUPPORTED_MEDIA_TYPE"
+  | "SERVICE_UNAVAILABLE"
+  | "INTERNAL_ERROR";
+
+export interface ApiError {
+  code: ApiErrorCode;
+  message: string;
+  /** Field path (dot-joined, e.g. "specs.caseSize" or "images.0.url") -> first error message. */
+  fields?: Record<string, string>;
+}
+
+export type ApiResponse<T> = { ok: true; data: T } | { ok: false; error: ApiError };
