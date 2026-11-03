@@ -1,5 +1,6 @@
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
+import { WatchCursor } from "@/components/interactive/watch-cursor";
 import { FloatingWhatsApp } from "@/components/site/whatsapp-link";
 import { generalEnquiryUrl } from "@/lib/whatsapp";
 import { getSiteSettings } from "@/server/queries/settings";
@@ -23,6 +24,7 @@ export default async function SiteLayout({ children }: Readonly<{ children: Reac
       </main>
       <Footer settings={settings} />
       <FloatingWhatsApp href={generalEnquiryUrl(settings)} />
+      <WatchCursor />
     </>
   );
 }

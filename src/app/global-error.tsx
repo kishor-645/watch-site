@@ -30,7 +30,7 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
               onClick={retry}
               disabled={retrying}
               aria-busy={retrying}
-              className="type-nav inline-flex h-12 items-center justify-center rounded-sm bg-primary px-7 text-primary-foreground hover:bg-foreground/85"
+              className="type-nav inline-flex h-12 items-center justify-center rounded-full bg-primary px-7 font-semibold text-primary-foreground hover:opacity-90"
             >
               {retrying ? "Retrying…" : "Try again"}
             </button>
@@ -38,7 +38,7 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a
               href="/"
-              className="type-nav inline-flex h-12 items-center justify-center rounded-sm border border-foreground/80 px-7 hover:bg-foreground hover:text-background"
+              className="type-nav inline-flex h-12 items-center justify-center rounded-full border border-foreground/30 px-7 font-semibold hover:bg-foreground hover:text-background"
             >
               Return home
             </a>

@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { ArrowDownIcon, ArrowUpIcon, ExternalLinkIcon, Loader2Icon, PlusIcon, RotateCcwIcon, Trash2Icon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -548,12 +549,19 @@ export function WatchForm({ watch, categories, movements, brands, currency }: Wa
       </Section>
 
       {/* ------------------------------ Actions ------------------------------ */}
-      <div className="sticky bottom-0 z-30 -mx-4 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-muted-foreground" aria-live="polite">
+      <div className="dark sticky bottom-3 z-30 mt-6 rounded-2xl border border-border bg-background/95 px-3 py-2.5 text-foreground shadow-[0_18px_40px_-16px_rgb(10_14_28/0.55)] backdrop-blur sm:px-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <p className="flex items-center gap-2 text-xs text-muted-foreground" aria-live="polite">
+            <span
+              aria-hidden
+              className={cn(
+                "size-2 shrink-0 rounded-full",
+                uploading || dirty ? "bg-hot" : isEdit ? "bg-success" : "bg-muted-foreground/40",
+              )}
+            />
             {uploading ? "Waiting for uploads to finish…" : dirty ? "Unsaved changes" : isEdit ? "All changes saved" : ""}
           </p>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex w-full items-center gap-2 sm:w-auto">
             {isEdit && watch && (
               <>
                 <DeleteWatchDialog
@@ -566,24 +574,24 @@ export function WatchForm({ watch, categories, movements, brands, currency }: Wa
                   }}
                   trigger={
                     <Button type="button" variant="destructive" size="lg">
-                      <Trash2Icon aria-hidden /> Delete
+                      <Trash2Icon aria-hidden /> <span className="max-sm:sr-only">Delete</span>
                     </Button>
                   }
                 />
                 {watch.published && (
                   <Button asChild variant="outline" size="lg">
                     <a href={`/watches/${watch.slug}`} target="_blank" rel="noopener noreferrer">
-                      <ExternalLinkIcon aria-hidden /> View on site
+                      <ExternalLinkIcon aria-hidden /> <span className="max-sm:sr-only">View on site</span>
                       <span className="sr-only">(opens in a new tab)</span>
                     </a>
                   </Button>
                 )}
               </>
             )}
-            <Button asChild variant="ghost" size="lg">
+            <Button asChild variant="ghost" size="lg" className="ml-auto">
               <Link href="/admin/watches">Cancel</Link>
             </Button>
-            <Button type="submit" size="lg" disabled={saving || uploading}>
+            <Button type="submit" size="lg" className="px-4 font-semibold" disabled={saving || uploading}>
               {saving && <Loader2Icon className="animate-spin" aria-hidden />}
               {saving ? "Saving…" : isEdit ? "Save changes" : "Create watch"}
             </Button>
@@ -663,7 +671,7 @@ export function SwitchField({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 rounded-md border border-border bg-background/40 px-3 py-2.5">
+    <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2.5">
       <div>
         <label htmlFor={id} className="text-sm font-medium">
           {label}

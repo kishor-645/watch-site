@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { container } from "@/components/home/section-heading";
 import { ProductCard } from "@/components/product/product-card";
+import { CategoryChips } from "@/components/shop/category-chips";
 import { FilterPanel } from "@/components/shop/filter-panel";
 import { PageHeader } from "@/components/shop/page-header";
 import { Pagination } from "@/components/shop/pagination";
@@ -11,14 +12,15 @@ import { hasActiveFilters, sliderBounds, type ShopOptions } from "@/components/s
 import { parseCatalogQuery } from "@/lib/schemas/catalog-query";
 import { GENDERS, genderLabels } from "@/lib/schemas/watch";
 import type { CatalogQuery, PublicSettings } from "@/lib/types";
-import { generalEnquiryUrl } from "@/lib/whatsapp";
+import { absoluteUrl, productPath } from "@/lib/site-url";
+import { generalEnquiryUrl, watchEnquiryUrl } from "@/lib/whatsapp";
 import { getSiteSettings } from "@/server/queries/settings";
 import { getCatalogFacets, listPublishedWatches } from "@/server/queries/watches";
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
-// Grid sits beside a 240px sidebar from lg upwards: 2 cols < md, 3 cols >= md, 4 cols >= 2xl.
-const GRID_SIZES = "(min-width: 1536px) 230px, (min-width: 1280px) 300px, (min-width: 1024px) 24vw, (min-width: 768px) 31vw, 50vw";
+// Grid sits beside a 256px sidebar from lg upwards: 2 cols < md, 3 cols >= md, 4 cols >= 2xl.
+const GRID_SIZES = "(min-width: 1536px) 250px, (min-width: 1280px) 290px, (min-width: 1024px) 24vw, (min-width: 768px) 31vw, 50vw";
 
 /** The single category being browsed (e.g. /shop?category=diver), if that is the only filter. */
 function activeCategory(query: CatalogQuery, settings: PublicSettings) {
@@ -88,25 +90,30 @@ export default async function ShopPage({ searchParams }: Props) {
         ]}
         title={category ? `${category.label} watches` : "Shop watches"}
         description={category?.description || undefined}
-      />
+      >
+        <CategoryChips
+          categories={options.categories}
+          active={query.category.length === 0 ? null : query.category.length === 1 ? query.category[0] : undefined}
+        />
+      </PageHeader>
 
       <ShopStateProvider query={query}>
-        <div className={`${container} flex gap-12 pb-section xl:gap-16`}>
+        <div className={`${container} flex gap-10 pb-section xl:gap-12`}>
           <aside
             aria-label="Filters"
-            className="no-scrollbar sticky top-24 hidden max-h-[calc(100vh-7rem)] w-60 shrink-0 self-start overflow-y-auto pb-10 lg:block"
+            className="no-scrollbar sticky top-24 hidden max-h-[calc(100vh-7rem)] w-64 shrink-0 self-start overflow-y-auto rounded-[1.5rem] border border-foreground/[0.07] bg-card p-6 lg:block"
           >
-            <div className="mb-6 flex h-10 items-center justify-between border-b border-border pb-5 box-content">
-              <h2 className="font-serif text-2xl font-medium">Filters</h2>
+            <div className="mb-6 flex items-center justify-between border-b border-border pb-5">
+              <h2 className="font-display text-xl font-bold tracking-[-0.02em]">Filters</h2>
               <ClearAllButton />
             </div>
             <FilterPanel options={options} />
           </aside>
 
           <div className="min-w-0 flex-1">
-            <div className="flex flex-col gap-3 border-b border-border pb-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 rounded-[1.25rem] border border-foreground/[0.07] bg-card/60 p-2 sm:flex-row sm:items-center sm:justify-between">
               <ShopSearch />
-              <div className="flex w-full items-center gap-3 sm:w-auto">
+              <div className="flex w-full items-center gap-2 sm:w-auto">
                 <MobileFilters options={options} total={result.total} />
                 <SortSelect />
               </div>
@@ -119,7 +126,7 @@ export default async function ShopPage({ searchParams }: Props) {
                 {result.total > 0 ? (
                   <>
                     Showing{" "}
-                    <span className="tabular-nums text-foreground">
+                    <span className="font-semibold tabular-nums text-foreground">
                       {result.pageCount > 1 ? `${first}–${last} of ${result.total}` : result.total}
                     </span>{" "}
                     {result.total === 1 ? "watch" : "watches"}
@@ -130,12 +137,13 @@ export default async function ShopPage({ searchParams }: Props) {
               </p>
 
               {result.items.length > 0 ? (
-                <ul className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:gap-x-6 lg:gap-y-14 2xl:grid-cols-4">
+                <ul className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:gap-5 2xl:grid-cols-4">
                   {result.items.map((watch, i) => (
                     <li key={watch.id}>
                       <ProductCard
                         watch={watch}
                         currency={options.currency}
+                        enquiryUrl={watchEnquiryUrl(settings, watch, absoluteUrl(productPath(watch.slug)))}
                         priority={i === 0}
                         sizes={GRID_SIZES}
                         headingLevel="h2"

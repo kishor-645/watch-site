@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+/* Interactive layer (cursor, quick view, search overlay, page transitions). */
+@import "./motion.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -15,8 +17,13 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-info: var(--info);
+  --color-hot: var(--hot);
+  --color-hot-ink: var(--hot-ink);
+  --color-violet: var(--violet);
+  --color-cream: var(--cream);
+  --font-display: var(--font-space-grotesk);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-cormorant);
+  --font-heading: var(--font-space-grotesk);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -59,81 +66,134 @@
 @theme {
   --spacing-section: clamp(4rem, 2.5rem + 5vw, 7.5rem);
   --ease-quiet: cubic-bezier(0.2, 0, 0, 1);
+  --ease-snap: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Light catalogue (DESIGN_SPEC §4.1). */
+/* =============================================================================================
+ * MyWatch design system — "Midnight" (Gen-Z premium).
+ * Base: deep midnight navy. Accents: electric blue (brand), vibrant orange (hot), violet, silver.
+ * Scopes: :root = midnight (public site), .light = warm cream editorial sections / admin content,
+ * .dark = deepest ink bands. Text pairs are WCAG AA (ratios noted).
+ * ============================================================================================= */
 :root {
-  --background: #f7f4ee;
-  --foreground: #1c1a17;
-  --card: #ffffff;
-  --card-foreground: #1c1a17;
-  --popover: #ffffff;
-  --popover-foreground: #1c1a17;
-  --surface-2: #ece7de;
-  --primary: #1c1a17;
-  --primary-foreground: #f7f4ee;
-  --secondary: #ece7de;
-  --secondary-foreground: #1c1a17;
-  --muted: #ece7de;
-  --muted-foreground: #6b645a;
-  --accent: #ece7de;
-  --accent-foreground: #1c1a17;
-  --brand: #b08d57;
-  --brand-ink: #7a5c24;
-  --border: #ddd6ca;
-  --input: #8f8678;
-  --ring: #7a5c24;
-  --success: #2f6b4a;
-  --warning: #8a5a12;
-  --info: #3d5a73;
-  --destructive: #a23b2c;
-  --chart-1: #1c1a17;
-  --chart-2: #6b645a;
-  --chart-3: #8f8678;
-  --chart-4: #b08d57;
-  --chart-5: #ddd6ca;
-  --radius: 0.125rem;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #1c1a17;
-  --sidebar-primary: #1c1a17;
-  --sidebar-primary-foreground: #f7f4ee;
-  --sidebar-accent: #ece7de;
-  --sidebar-accent-foreground: #1c1a17;
-  --sidebar-border: #ddd6ca;
-  --sidebar-ring: #7a5c24;
+  --background: #0a0e1c;
+  --foreground: #f4eee3; /* 16.1:1 */
+  --card: #11162b;
+  --card-foreground: #f4eee3;
+  --popover: #11162b;
+  --popover-foreground: #f4eee3;
+  --surface-2: #161d3a;
+  --primary: #ff6b2c; /* hot orange CTA; #0a0e1c on it 6.8:1 */
+  --primary-foreground: #0a0e1c;
+  --secondary: #1a2245;
+  --secondary-foreground: #f4eee3;
+  --muted: #161d3a;
+  --muted-foreground: #a7aec4; /* 8.6:1 */
+  --accent: #1a2245;
+  --accent-foreground: #f4eee3;
+  --brand: #4d6bff; /* electric blue (decorative / fills) */
+  --brand-ink: #8ea2ff; /* blue for text on midnight 7.4:1 */
+  --hot: #ff6b2c;
+  --hot-ink: #ff8a57; /* 7.9:1 */
+  --violet: #8b5cf6;
+  --silver: #c7ccd6;
+  --cream: #f4eee3;
+  --border: #252d52;
+  --input: #5b689c; /* 3.6:1 on background, 3.4:1 on card (control borders) */
+  --ring: #8ea2ff;
+  --success: #3ddc97;
+  --warning: #ffb547;
+  --info: #6ec8ff;
+  --destructive: #ff5c5c;
+  --chart-1: #4d6bff;
+  --chart-2: #8b5cf6;
+  --chart-3: #ff6b2c;
+  --chart-4: #3ddc97;
+  --chart-5: #c7ccd6;
+  --radius: 0.875rem;
+  --sidebar: #0d1224;
+  --sidebar-foreground: #f4eee3;
+  --sidebar-primary: #ff6b2c;
+  --sidebar-primary-foreground: #0a0e1c;
+  --sidebar-accent: #1a2245;
+  --sidebar-accent-foreground: #f4eee3;
+  --sidebar-border: #252d52;
+  --sidebar-ring: #8ea2ff;
+  --gradient-aurora: linear-gradient(120deg, #4d6bff 0%, #8b5cf6 48%, #ff6b2c 100%);
+  --gradient-glow: radial-gradient(60% 60% at 50% 40%, rgb(77 107 255 / 0.35), transparent 70%);
+  --shadow-lift: 0 24px 60px -24px rgb(0 0 0 / 0.65), 0 0 0 1px rgb(142 162 255 / 0.12);
   --dur-fast: 150ms;
   --dur-base: 300ms;
   --dur-slow: 600ms;
-}
-
-/* Dark bands: footer and the closing CTA (class on the band element). */
-.dark {
-  --background: #15130f;
-  --foreground: #f2eee6;
-  --card: #1f1c17;
-  --card-foreground: #f2eee6;
-  --popover: #1f1c17;
-  --popover-foreground: #f2eee6;
-  --surface-2: #1f1c17;
-  --primary: #f2eee6;
-  --primary-foreground: #15130f;
-  --secondary: #1f1c17;
-  --secondary-foreground: #f2eee6;
-  --muted: #1f1c17;
-  --muted-foreground: #a39b8e;
-  --accent: #2a261f;
-  --accent-foreground: #f2eee6;
-  --brand: #c9a96a;
-  --brand-ink: #c9a96a;
-  --border: #3a352d;
-  --input: #6e665a;
-  --ring: #c9a96a;
   color-scheme: dark;
 }
 
-/* Admin console: same palette, slightly softer corners and sans-serif headings (§11). */
+/* Warm cream editorial scope (sections on the site; admin content area). */
+.light,
 [data-admin] {
-  --radius: 0.375rem;
+  --background: #f4eee3;
+  --foreground: #0a0e1c; /* 16.1:1 */
+  --card: #ffffff;
+  --card-foreground: #0a0e1c;
+  --popover: #ffffff;
+  --popover-foreground: #0a0e1c;
+  --surface-2: #eae2d3;
+  --primary: #0a0e1c;
+  --primary-foreground: #f4eee3;
+  --secondary: #eae2d3;
+  --secondary-foreground: #0a0e1c;
+  --muted: #eae2d3;
+  --muted-foreground: #565b70; /* 6.2:1 */
+  --accent: #eae2d3;
+  --accent-foreground: #0a0e1c;
+  --brand: #3d55e0;
+  --brand-ink: #2f45c7; /* 6.4:1 */
+  --hot: #ff6b2c;
+  --hot-ink: #b8410e; /* 5.0:1 */
+  --border: #dcd3c2;
+  --input: #8a8fa3;
+  --ring: #2f45c7;
+  --success: #1f7a4d;
+  --warning: #9a5b00;
+  --info: #1d5d8c;
+  --destructive: #b42318;
+  color-scheme: light;
+}
+
+/* Deepest ink bands (footer, closing CTA). */
+.dark {
+  --background: #05070f;
+  --foreground: #f4eee3;
+  --card: #0d1122;
+  --card-foreground: #f4eee3;
+  --popover: #0d1122;
+  --popover-foreground: #f4eee3;
+  --surface-2: #11162b;
+  --primary: #ff6b2c;
+  --primary-foreground: #05070f;
+  --secondary: #11162b;
+  --secondary-foreground: #f4eee3;
+  --muted: #11162b;
+  --muted-foreground: #a7aec4;
+  --accent: #161d3a;
+  --accent-foreground: #f4eee3;
+  --brand: #4d6bff;
+  --brand-ink: #8ea2ff;
+  --border: #1e2547;
+  --input: #4a5687;
+  --ring: #8ea2ff;
+  color-scheme: dark;
+}
+
+[data-admin] {
+  --radius: 0.625rem;
+}
+
+/* Scopes re-declare colours, so they must also reset the inherited text colour. */
+.light,
+.dark,
+[data-admin] {
+  color: var(--foreground);
 }
 
 @layer base {
@@ -145,16 +205,15 @@
   }
   html {
     @apply font-sans scroll-smooth;
-    color-scheme: light;
   }
   h1, h2, h3, h4 {
-    @apply font-serif;
+    @apply font-display;
   }
   [data-admin] :is(h1, h2, h3, h4) {
     @apply font-sans font-semibold tracking-normal;
   }
   ::selection {
-    background: var(--surface-2);
+    background: rgb(77 107 255 / 0.45);
     color: var(--foreground);
   }
   /* Honour reduced-motion for CSS transitions/keyframes and smooth scrolling. */
@@ -178,38 +237,39 @@
  * mistakes a size for a text colour and drops it.
  * ------------------------------------------------------------------------------------------- */
 @utility type-display {
-  font-family: var(--font-serif);
-  font-weight: 400;
-  font-size: clamp(2.5rem, 1.7rem + 3.4vw, 4rem);
-  line-height: 1.04;
-  letter-spacing: -0.01em;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.75rem, 1.4rem + 6vw, 6.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
 }
 @utility type-h1 {
-  font-family: var(--font-serif);
-  font-weight: 400;
-  font-size: clamp(2.25rem, 1.8rem + 1.9vw, 3.25rem);
-  line-height: 1.08;
-  letter-spacing: -0.005em;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.5rem, 1.75rem + 3.2vw, 4.75rem);
+  line-height: 0.98;
+  letter-spacing: -0.035em;
 }
 @utility type-h2 {
-  font-family: var(--font-serif);
-  font-weight: 400;
-  font-size: clamp(1.875rem, 1.6rem + 1.2vw, 2.5rem);
-  line-height: 1.12;
-  letter-spacing: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 1.45rem + 2.4vw, 3.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
 }
 @utility type-h3 {
-  font-family: var(--font-serif);
-  font-weight: 500;
-  font-size: clamp(1.375rem, 1.3rem + 0.35vw, 1.625rem);
-  line-height: 1.25;
-  letter-spacing: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.375rem, 1.25rem + 0.5vw, 1.75rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 @utility type-card {
-  font-family: var(--font-serif);
-  font-weight: 500;
-  font-size: clamp(1.125rem, 1.1rem + 0.1vw, 1.1875rem);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1rem, 0.97rem + 0.12vw, 1.0625rem);
   line-height: 1.3;
+  letter-spacing: -0.01em;
 }
 @utility type-lede {
   font-family: var(--font-sans);
@@ -300,9 +360,30 @@
   }
 }
 
-/* The floating WhatsApp button steps aside while the product page's sticky enquiry bar is shown. */
-body[data-sticky-cta] [data-floating-whatsapp] {
-  display: none;
+/* The floating WhatsApp button steps aside while the product page shows its own enquiry button on
+ * screen (price card / main button / sticky bar; set by sticky-enquiry-bar.tsx on mobile). */
+body[data-page-cta] [data-floating-whatsapp] {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(0.75rem) scale(0.9);
+  pointer-events: none;
+}
+
+/* Luxury accent word inside display headings: <em class="accent-serif">…</em>. */
+@utility accent-serif {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+@utility text-aurora {
+  background: var(--gradient-aurora);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@utility bg-aurora {
+  background-image: var(--gradient-aurora);
 }
 
 /* Consistent, visible keyboard focus. */
@@ -317,3 +398,188 @@ body[data-sticky-cta] [data-floating-whatsapp] {
     outline-offset: 2px;
   }
 }
+
+/* =============================================================================================
+ * Public site components (storefront). Decorative motion is CSS-only and stops for users who
+ * prefer reduced motion (see the global reduced-motion rule above).
+ * ============================================================================================= */
+
+/*
+ * Soft drifting gradient orbs behind heroes. Parent must clip (overflow-hidden).
+ * Pre-blurred: the soft falloff is baked into the radial gradient (no `filter: blur()`, which on
+ * these 20–34rem layers is a large offscreen blur pass on every raster and costly on phones).
+ */
+.orb {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  opacity: 0.5;
+  background: radial-gradient(
+    closest-side,
+    rgb(var(--orb-rgb) / 0.85),
+    rgb(var(--orb-rgb) / 0.55) 30%,
+    rgb(var(--orb-rgb) / 0.24) 55%,
+    rgb(var(--orb-rgb) / 0.07) 78%,
+    transparent
+  );
+}
+.orb-blue {
+  --orb-rgb: 77 107 255;
+}
+.orb-violet {
+  --orb-rgb: 139 92 246;
+}
+.orb-orange {
+  --orb-rgb: 255 107 44;
+  opacity: 0.32;
+}
+@keyframes orb-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(6%, -8%, 0) scale(1.12);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .orb {
+    animation: orb-drift 22s ease-in-out infinite;
+  }
+  .orb-violet {
+    animation-duration: 28s;
+    animation-direction: reverse;
+  }
+  .orb-orange {
+    animation-duration: 34s;
+  }
+}
+
+/*
+ * Pre-blurred aurora halo (replaces `bg-aurora blur-3xl`): the aurora gradient with its edges
+ * feathered by two intersected linear masks, so there is no filter pass on a large layer.
+ */
+.aurora-glow {
+  background: var(--gradient-aurora);
+  --glow-fade: 8rem;
+  -webkit-mask-image:
+    linear-gradient(to right, transparent, #000 var(--glow-fade), #000 calc(100% - var(--glow-fade)), transparent),
+    linear-gradient(to bottom, transparent, #000 var(--glow-fade), #000 calc(100% - var(--glow-fade)), transparent);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent, #000 var(--glow-fade), #000 calc(100% - var(--glow-fade)), transparent),
+    linear-gradient(to bottom, transparent, #000 var(--glow-fade), #000 calc(100% - var(--glow-fade)), transparent);
+  mask-composite: intersect;
+}
+
+/* Faint blueprint grid, faded out towards the edges. */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgb(244 238 227 / 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(244 238 227 / 0.045) 1px, transparent 1px);
+  background-size: 64px 64px;
+  -webkit-mask-image: radial-gradient(70% 65% at 50% 35%, #000 25%, transparent 80%);
+  mask-image: radial-gradient(70% 65% at 50% 35%, #000 25%, transparent 80%);
+}
+
+/* 1px aurora gradient border on a rounded element (uses its border-radius). */
+.aurora-frame {
+  position: relative;
+  isolation: isolate;
+}
+.aurora-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--gradient-aurora);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Product card hover glow (shadow only, so it never shifts layout). */
+.card-glow {
+  transition:
+    box-shadow var(--dur-base) var(--ease-quiet),
+    border-color var(--dur-base) var(--ease-quiet),
+    transform var(--dur-base) var(--ease-quiet);
+}
+@media (hover: hover) {
+  .card-glow:hover {
+    border-color: rgb(142 162 255 / 0.35);
+    box-shadow:
+      0 30px 70px -30px rgb(77 107 255 / 0.55),
+      0 0 0 1px rgb(142 162 255 / 0.12);
+  }
+}
+
+/* Outlined giant wordmark (footer, 404). */
+.text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px rgb(244 238 227 / 0.16);
+}
+
+/* Live status dot. */
+@keyframes ping-soft {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  80%,
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+.dot-ping {
+  position: relative;
+}
+.dot-ping::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  animation: ping-soft 2.2s var(--ease-quiet) infinite;
+}
+
+/* Shimmering skeleton blocks. */
+@keyframes shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+.skeleton {
+  background-color: var(--surface-2);
+  background-image: linear-gradient(
+    100deg,
+    transparent 30%,
+    color-mix(in oklab, var(--foreground) 7%, transparent) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: shimmer 1.8s linear infinite;
+}
+
+/* Slowly rotating decorative ring (hero). */
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .spin-slow {
+    animation: spin-slow 40s linear infinite;
+  }
+}
+

@@ -1,11 +1,17 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-/** Single-colour serif wordmark derived from the configured site name. */
+/** Bold display wordmark derived from the configured site name, with an aurora full stop. */
 export function Wordmark({ name, className }: { name: string; className?: string }) {
   return (
-    <span className={cn("font-serif text-2xl font-semibold uppercase tracking-[0.12em] text-foreground", className)}>
+    <span
+      className={cn(
+        "inline-flex items-baseline font-display text-2xl font-bold uppercase leading-none tracking-[-0.04em] text-foreground",
+        className,
+      )}
+    >
       {name}
+      <span aria-hidden className="ml-[0.08em] inline-block size-[0.26em] rounded-full bg-aurora" />
     </span>
   );
 }

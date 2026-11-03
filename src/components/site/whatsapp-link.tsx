@@ -36,7 +36,7 @@ export function WhatsAppLink({
 
 /**
  * Quiet round WhatsApp button fixed to the bottom-right corner of every public page. Hidden while
- * the product page's sticky enquiry bar is shown (`body[data-sticky-cta]`, see globals.css).
+ * the product page shows its own enquiry button on screen (`body[data-page-cta]`, see globals.css).
  */
 export function FloatingWhatsApp({ href }: { href: string }) {
   return (
@@ -45,9 +45,9 @@ export function FloatingWhatsApp({ href }: { href: string }) {
       {...externalLinkProps}
       data-floating-whatsapp=""
       aria-label="Chat with us on WhatsApp (opens in a new tab)"
-      className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-40 inline-flex size-12 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors duration-150 hover:border-foreground sm:bottom-6 sm:right-6 print:hidden"
+      className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-40 inline-flex size-13 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_14px_36px_-12px_rgb(255_107_44/0.8)] ring-4 ring-background/60 transition-[transform,box-shadow,opacity,visibility] duration-300 ease-snap hover:scale-105 hover:shadow-[0_18px_44px_-12px_rgb(255_107_44/0.95)] sm:bottom-6 sm:right-6 print:hidden"
     >
-      <WhatsAppIcon className="size-5" />
+      <WhatsAppIcon className="size-6" />
     </a>
   );
 }

@@ -26,7 +26,7 @@ export function ShopSearch() {
   return (
     <form
       role="search"
-      className="relative w-full sm:max-w-xs"
+      className="relative w-full sm:max-w-sm"
       onSubmit={(e) => {
         e.preventDefault();
         const q = String(new FormData(e.currentTarget).get("q") ?? "").trim();
@@ -45,9 +45,9 @@ export function ShopSearch() {
         defaultValue={query.q}
         placeholder="Search by name, brand or reference"
         maxLength={80}
-        className="h-10 w-full rounded-sm border border-input bg-card pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground"
+        className="h-11 w-full rounded-full border border-transparent bg-background/60 pl-11 pr-4 text-sm text-foreground transition-[border-color] duration-300 placeholder:text-muted-foreground hover:border-foreground/15 focus:border-ring"
       />
-      <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Search aria-hidden className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
     </form>
   );
 }
@@ -56,13 +56,13 @@ export function SortSelect() {
   const { query, navigate } = useShop();
   return (
     <Select value={query.sort} onValueChange={(v) => navigate({ sort: v as SortKey })}>
-      <SelectTrigger aria-label="Sort watches" className="h-10! min-w-48 flex-1 rounded-sm border-input bg-card px-3 text-sm text-foreground sm:flex-none">
+      <SelectTrigger aria-label="Sort watches" className="h-11! min-w-48 flex-1 rounded-full border-foreground/[0.1] bg-background/60 px-4 text-sm text-foreground hover:border-foreground/25 sm:flex-none">
         <span className="mr-1 hidden text-muted-foreground sm:inline">Sort:</span>
         <SelectValue />
       </SelectTrigger>
-      <SelectContent position="popper" align="end" className="rounded-sm border border-border">
+      <SelectContent position="popper" align="end" className="rounded-2xl border border-border">
         {SORT_OPTIONS.map((o) => (
-          <SelectItem key={o.value} value={o.value} className="py-2">
+          <SelectItem key={o.value} value={o.value} className="rounded-lg py-2">
             {o.label}
           </SelectItem>
         ))}
@@ -79,7 +79,7 @@ export function MobileFilters({ options, total }: { options: ShopOptions; total:
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" className="type-nav h-10 gap-2 rounded-sm text-xs border-input bg-card px-4 lg:hidden">
+        <Button variant="outline" className="type-nav h-11 gap-2 rounded-full border-foreground/[0.1] bg-background/60 px-4 text-xs font-semibold lg:hidden">
           <SlidersHorizontal aria-hidden />
           Filters
           {count > 0 && (
@@ -92,7 +92,7 @@ export function MobileFilters({ options, total }: { options: ShopOptions; total:
       </SheetTrigger>
       <SheetContent side="left" className="w-full max-w-sm gap-0 border-r border-border bg-background p-0">
         <SheetHeader className="border-b border-border px-6 py-5">
-          <SheetTitle className="font-serif text-2xl font-medium">Filters</SheetTitle>
+          <SheetTitle className="font-display text-2xl font-bold tracking-[-0.02em]">Filters</SheetTitle>
           <SheetDescription className="text-xs">Results update as you choose.</SheetDescription>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto px-6 py-8">
@@ -103,12 +103,12 @@ export function MobileFilters({ options, total }: { options: ShopOptions; total:
             variant="outline"
             onClick={() => navigate(EMPTY_FILTERS)}
             disabled={!hasActiveFilters(query)}
-            className="type-nav h-12 flex-1 rounded-sm text-xs border-foreground/80 bg-transparent"
+            className="type-nav h-12 flex-1 rounded-full border-foreground/30 bg-transparent text-xs font-semibold"
           >
             Clear all
           </Button>
           <SheetClose asChild>
-            <Button className="type-nav h-12 flex-[1.4] rounded-sm text-xs hover:bg-foreground/85" aria-live="polite">
+            <Button className="type-nav h-12 flex-[1.4] rounded-full text-xs font-semibold hover:bg-[color-mix(in_oklab,var(--primary),white_14%)]" aria-live="polite">
               {pending ? "Updating…" : `Show ${total} ${total === 1 ? "watch" : "watches"}`}
             </Button>
           </SheetClose>
@@ -165,7 +165,7 @@ export function ActiveFilters({ options }: { options: ShopOptions }) {
             type="button"
             onClick={() => navigate(chip.patch)}
             aria-label={`Remove filter: ${chip.label}`}
-            className="group inline-flex h-8 items-center gap-2 rounded-full border border-input bg-card pl-3.5 pr-2.5 text-[0.8125rem] text-foreground transition-colors duration-150 hover:border-foreground"
+            className="group inline-flex h-8 items-center gap-2 rounded-full border border-brand/40 bg-brand/15 pl-3.5 pr-2.5 text-[0.8125rem] font-medium text-foreground transition-colors duration-150 hover:border-brand-ink hover:bg-brand/25"
           >
             {chip.label}
             <X aria-hidden className="size-3.5 text-muted-foreground group-hover:text-foreground" />
@@ -176,7 +176,7 @@ export function ActiveFilters({ options }: { options: ShopOptions }) {
         <button
           type="button"
           onClick={() => navigate(EMPTY_FILTERS)}
-          className="ml-1 rounded-sm px-1 text-[0.8125rem] font-medium text-foreground underline decoration-border underline-offset-[6px] transition-colors duration-150 hover:decoration-foreground"
+          className="ml-1 rounded-sm px-1 text-[0.8125rem] font-medium text-brand-ink underline decoration-brand-ink/40 underline-offset-[6px] transition-colors duration-150 hover:decoration-brand-ink"
         >
           Clear all
         </button>
@@ -193,7 +193,7 @@ export function ClearAllButton() {
     <button
       type="button"
       onClick={() => navigate(EMPTY_FILTERS)}
-      className="rounded-sm text-[0.8125rem] font-medium text-foreground underline decoration-border underline-offset-[6px] transition-colors duration-150 hover:decoration-foreground"
+      className="rounded-sm text-[0.8125rem] font-medium text-brand-ink underline decoration-brand-ink/40 underline-offset-[6px] transition-colors duration-150 hover:decoration-brand-ink"
     >
       Clear all
     </button>

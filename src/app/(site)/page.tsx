@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BrandTicker } from "@/components/home/brand-ticker";
 import { CtaBand } from "@/components/home/cta-band";
 import { FeaturedWatches } from "@/components/home/featured-watches";
 import { Hero } from "@/components/home/hero";
@@ -6,6 +7,7 @@ import { container } from "@/components/home/section-heading";
 import { ShopByCategory } from "@/components/home/shop-by-category";
 import { Story } from "@/components/home/story";
 import { TrustBar } from "@/components/home/trust-bar";
+import { RecentlyViewedRail } from "@/components/interactive/recently-viewed";
 import { ShopEmpty } from "@/components/shop/shop-empty";
 import { formatPrice } from "@/lib/format";
 import { parseCatalogQuery } from "@/lib/schemas/catalog-query";
@@ -48,6 +50,11 @@ export default async function HomePage() {
       : null;
   const generalHref = generalEnquiryUrl(settings);
   const currency = { currencyCode: general.currencyCode, locale: general.locale };
+  const enquiryUrls = Object.fromEntries(
+    watches.map((w) => [w.slug, watchEnquiryUrl(settings, w, absoluteUrl(productPath(w.slug)))]),
+  );
+  // Ticker: brands of the featured watches, then the category labels (no hardcoded claims).
+  const tickerItems = [...watches.map((w) => w.brand), ...catalog.categories.map((c) => c.label)];
 
   return (
     <>
@@ -59,6 +66,7 @@ export default async function HomePage() {
         watch={
           heroWatch && {
             name: heroWatch.name,
+            brand: heroWatch.brand,
             href: productPath(heroWatch.slug),
             price: formatPrice(heroWatch.price, currency),
           }
@@ -66,13 +74,17 @@ export default async function HomePage() {
         enquiryHref={
           heroWatch ? watchEnquiryUrl(settings, heroWatch, absoluteUrl(productPath(heroWatch.slug))) : generalHref
         }
+        highlights={home.trustItems.map((t) => t.title)}
       />
+      {watches.length > 0 && <BrandTicker items={tickerItems} />}
+
       {watches.length > 0 ? (
         <FeaturedWatches
           title={isFallback ? "New arrivals" : home.featuredTitle}
           subtitle={isFallback ? "The latest additions to the collection." : home.featuredSubtitle}
           watches={watches}
           currency={currency}
+          enquiryUrls={enquiryUrls}
           viewAllHref={isFallback ? "/shop?sort=newest" : "/shop"}
         />
       ) : (
@@ -82,9 +94,10 @@ export default async function HomePage() {
       )}
 
       {watches.length > 0 && <ShopByCategory categories={catalog.categories} />}
+      <RecentlyViewedRail currency={currency} className={`${container} pb-section`} />
       <Story title={home.storyTitle} body={home.storyBody} imageUrl={home.storyImageUrl} />
       <TrustBar items={home.trustItems} />
-      <CtaBand title={home.ctaTitle} body={home.ctaBody} whatsappHref={generalHref} />
+      <CtaBand title={home.ctaTitle} body={home.ctaBody} whatsappHref={generalHref} className="pt-0" />
     </>
   );
 }

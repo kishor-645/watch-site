@@ -1,7 +1,7 @@
 import "server-only";
 import { ObjectId, type Filter } from "mongodb";
 import { AVAILABILITY, AVAILABLE_STATES, type Availability } from "@/lib/schemas/watch";
-import type { AdminWatchQuery, AuditQuery } from "@/lib/schemas/catalog-query";
+import type { AdminWatchQuery, AuditQuery } from "@/lib/schemas/admin-query";
 import type { AdminProfile, AuditLogEntry, DashboardStats, Paginated, Watch } from "@/lib/types";
 import { getCollections } from "../db";
 import { escapeRegex, toAdminProfile, toAuditEntry, toWatch } from "../mappers";

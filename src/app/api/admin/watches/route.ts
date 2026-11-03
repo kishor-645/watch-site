@@ -1,4 +1,4 @@
-import { adminWatchQuerySchema } from "@/lib/schemas/catalog-query";
+import { adminWatchQuerySchema } from "@/lib/schemas/admin-query";
 import { watchInputSchema } from "@/lib/schemas/watch";
 import { ok, readJson, withApi } from "@/server/http";
 import { listAdminWatches } from "@/server/queries/admin";

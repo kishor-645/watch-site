@@ -6,7 +6,7 @@ import { EmptyState, PageHeader, Pagination } from "@/components/admin/page-part
 import { SeedCatalogButton } from "@/components/admin/seed-catalog-button";
 import { WatchesList } from "@/components/admin/watches-list";
 import { WatchesToolbar } from "@/components/admin/watches-toolbar";
-import { adminWatchQuerySchema, type AdminWatchQuery } from "@/lib/schemas/catalog-query";
+import { adminWatchQuerySchema, type AdminWatchQuery } from "@/lib/schemas/admin-query";
 import { requireAdminPage } from "@/server/auth/session";
 import { listAdminWatches } from "@/server/queries/admin";
 import { loadSettings } from "@/server/queries/settings";

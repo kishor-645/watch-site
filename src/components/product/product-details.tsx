@@ -46,10 +46,15 @@ export function ProductDetails({
     .filter((g) => g.rows.length > 0);
 
   return (
-    <div className={cn("grid gap-14 lg:gap-16", paragraphs.length > 0 && "lg:grid-cols-[5fr_7fr]")}>
+    <div
+      className={cn(
+        "grid gap-12 sm:rounded-[2rem] sm:border sm:border-foreground/[0.07] sm:bg-card/50 sm:p-8 lg:gap-16 lg:p-12",
+        paragraphs.length > 0 && "lg:grid-cols-[5fr_7fr]",
+      )}
+    >
       {paragraphs.length > 0 && (
         <section aria-labelledby="description-heading">
-          <h2 id="description-heading" className="type-h2 text-foreground">
+          <h2 id="description-heading" className="type-h3 text-foreground">
             About this watch
           </h2>
           <div className="type-body mt-6 max-w-[62ch] space-y-5 text-foreground/85">
@@ -61,28 +66,28 @@ export function ProductDetails({
       )}
 
       <section aria-labelledby="specs-heading">
-        <h2 id="specs-heading" className="type-h2 text-foreground">
+        <h2 id="specs-heading" className="type-h3 text-foreground">
           Specifications
         </h2>
         <div
           className={cn(
-            "mt-6 gap-x-10 bg-card p-6 sm:p-8 [&>table]:mb-8 [&>table]:break-inside-avoid [&>table:last-child]:mb-0",
+            "mt-6 gap-x-10 rounded-[1.25rem] bg-surface-2/60 p-5 sm:p-7 [&>table]:mb-8 [&>table]:break-inside-avoid [&>table:last-child]:mb-0",
             paragraphs.length > 0 ? "xl:columns-2" : "md:columns-2",
           )}
         >
           {groups.map((g) => (
             <table key={g.title} className="w-full text-left">
-              <caption className="eyebrow pb-2 text-left text-muted-foreground">
+              <caption className="eyebrow pb-2 text-left font-semibold text-brand-ink">
                 {g.title}
                 <span className="sr-only"> — {watch.name} specifications</span>
               </caption>
               <tbody>
                 {g.rows.map((r, i) => (
-                  <tr key={`${r.label}-${i}`} className="border-b border-border last:border-b-0">
+                  <tr key={`${r.label}-${i}`} className="border-b border-foreground/[0.08] last:border-b-0">
                     <th scope="row" className="w-2/5 py-3 pr-4 align-top text-[0.8125rem] font-normal text-muted-foreground">
                       {r.label}
                     </th>
-                    <td className="py-3 align-top text-[0.9375rem] text-foreground [overflow-wrap:anywhere]">{r.value}</td>
+                    <td className="py-3 align-top text-[0.9375rem] font-medium text-foreground [overflow-wrap:anywhere]">{r.value}</td>
                   </tr>
                 ))}
               </tbody>

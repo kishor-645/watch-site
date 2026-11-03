@@ -45,7 +45,8 @@ export function DeleteWatchDialog({
   return (
     <AlertDialog open={open} onOpenChange={(o) => !pending && setOpen(o)}>
       <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
-      <AlertDialogContent>
+      {/* Portalled outside the console, so opt back into the admin (light) tokens explicitly. */}
+      <AlertDialogContent data-admin="">
         <AlertDialogHeader>
           <AlertDialogTitle>Delete “{watch.name}”?</AlertDialogTitle>
           <AlertDialogDescription>
