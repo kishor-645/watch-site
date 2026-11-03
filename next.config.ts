@@ -10,7 +10,7 @@ const csp = [
   "img-src 'self' data: blob: https://images.unsplash.com https://*.public.blob.vercel-storage.com",
   "font-src 'self' data:",
   // Vercel Blob client uploads PUT directly to blob storage.
-  "connect-src 'self' https://*.vercel-storage.com https://blob.vercel-storage.com",
+  "connect-src 'self' https://vercel.com/api/blob/ https://*.vercel-storage.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
