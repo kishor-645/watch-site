@@ -1,47 +1,75 @@
 import type { Metadata } from "next";
-import { getFlagship, getMostLoved } from "@/lib/catalog";
-import { watches } from "@/data/watches";
-import { formatPrice } from "@/lib/format";
+import { CtaBand } from "@/components/home/cta-band";
+import { FeaturedWatches } from "@/components/home/featured-watches";
 import { Hero } from "@/components/home/hero";
+import { container } from "@/components/home/section-heading";
+import { ShopByCategory } from "@/components/home/shop-by-category";
+import { Story } from "@/components/home/story";
 import { TrustBar } from "@/components/home/trust-bar";
-import { FeaturedCollections } from "@/components/home/featured-collections";
-import { MostLoved } from "@/components/home/most-loved";
-import { FlagshipSpotlight } from "@/components/home/flagship-spotlight";
-import { ShopByStyle } from "@/components/home/shop-by-style";
-import { BrandStory } from "@/components/home/brand-story";
-import { Newsletter } from "@/components/home/newsletter";
+import { ShopEmpty } from "@/components/shop/shop-empty";
+import { formatPrice } from "@/lib/format";
+import { absoluteUrl, productPath } from "@/lib/site-url";
+import { generalEnquiryUrl, watchEnquiryUrl } from "@/lib/whatsapp";
+import { getSiteSettings } from "@/server/queries/settings";
+import { getFeaturedWatches, getPublishedWatchBySlug } from "@/server/queries/watches";
 
 export const metadata: Metadata = {
-  title: { absolute: "MyWatch — Timeless Luxury. Crafted for You." },
-  description:
-    "Shop authentic luxury watches at MyWatch. Discover the Aurora Chronograph, divers, skeletons and dress watches with free insured shipping and a 2-year warranty.",
   alternates: { canonical: "/" },
 };
 
-export default function HomePage() {
-  const flagship = getFlagship();
-  const mostLoved = [flagship, ...getMostLoved().filter((w) => w.id !== flagship.id)];
+export default async function HomePage() {
+  const settings = await getSiteSettings();
+  const { home, general, catalog } = settings;
+  const [featured, chosen] = await Promise.all([
+    getFeaturedWatches(8),
+    home.heroWatchSlug ? getPublishedWatchBySlug(home.heroWatchSlug) : Promise.resolve(null),
+  ]);
 
-  const skeleton = watches.find((w) => w.category === "skeleton" && w.id !== flagship.id);
-  const storyImage = skeleton?.images[0] ?? flagship.images[0];
-  const storySecondary = skeleton?.images[1] ?? flagship.images[1];
+  const heroWatch = chosen ?? featured[0] ?? null;
+  const heroImage = home.heroImageUrl
+    ? { url: home.heroImageUrl, alt: heroWatch?.name ?? "" }
+    : heroWatch?.images[0]
+      ? { url: heroWatch.images[0].url, alt: heroWatch.images[0].alt || heroWatch.name }
+      : null;
+  const generalHref = generalEnquiryUrl(settings);
+  const currency = { currencyCode: general.currencyCode, locale: general.locale };
 
   return (
     <>
       <Hero
-        name={flagship.name}
-        slug={flagship.slug}
-        image={flagship.images[0]}
-        price={formatPrice(flagship.price)}
-        tagline="Flagship"
+        eyebrow={home.heroEyebrow}
+        title={home.heroTitle || general.tagline || general.siteName}
+        subtitle={home.heroSubtitle}
+        image={heroImage}
+        watch={
+          heroWatch && {
+            name: heroWatch.name,
+            href: productPath(heroWatch.slug),
+            price: formatPrice(heroWatch.price, currency),
+          }
+        }
+        enquiryHref={
+          heroWatch ? watchEnquiryUrl(settings, heroWatch, absoluteUrl(productPath(heroWatch.slug))) : generalHref
+        }
       />
-      <TrustBar />
-      <FeaturedCollections />
-      <MostLoved watches={mostLoved} />
-      <FlagshipSpotlight watch={flagship} />
-      <ShopByStyle />
-      <BrandStory image={storyImage} secondaryImage={storySecondary !== storyImage ? storySecondary : undefined} />
-      <Newsletter />
+      <TrustBar items={home.trustItems} />
+
+      {featured.length > 0 ? (
+        <FeaturedWatches
+          title={home.featuredTitle}
+          subtitle={home.featuredSubtitle}
+          watches={featured}
+          currency={currency}
+        />
+      ) : (
+        <div className={`${container} py-20`}>
+          <ShopEmpty filtered={false} whatsappHref={generalHref} />
+        </div>
+      )}
+
+      {featured.length > 0 && <ShopByCategory categories={catalog.categories} />}
+      <Story title={home.storyTitle} body={home.storyBody} imageUrl={home.storyImageUrl} />
+      <CtaBand title={home.ctaTitle} body={home.ctaBody} whatsappHref={generalHref} />
     </>
   );
 }

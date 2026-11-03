@@ -1,39 +1,45 @@
 import type { Watch } from "@/lib/types";
+import { schemaAvailability } from "./availability";
 
-/** schema.org Product structured data for rich results. */
-export function ProductJsonLd({ watch, url }: { watch: Watch; url: string }) {
+/** schema.org Product + Offer structured data. Intentionally no ratings/reviews. */
+export function ProductJsonLd({
+  watch,
+  url,
+  currencyCode,
+  sellerName,
+  categoryLabel,
+}: {
+  watch: Watch;
+  url: string;
+  currencyCode: string;
+  sellerName: string;
+  categoryLabel: string;
+}) {
   const data = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: watch.name,
-    description: watch.shortDescription,
-    image: watch.images,
-    sku: watch.id,
-    category: "Watches",
+    description: watch.shortDescription || watch.description.slice(0, 300),
+    image: watch.images.map((i) => i.url),
+    sku: watch.modelNumber || watch.id,
+    ...(watch.modelNumber && { mpn: watch.modelNumber }),
+    category: categoryLabel,
     brand: { "@type": "Brand", name: watch.brand },
-    aggregateRating: watch.reviewCount
-      ? {
-          "@type": "AggregateRating",
-          ratingValue: watch.rating,
-          reviewCount: watch.reviewCount,
-          bestRating: 5,
-        }
-      : undefined,
     offers: {
       "@type": "Offer",
       url,
-      priceCurrency: "INR",
+      priceCurrency: currencyCode,
       price: watch.price,
       itemCondition: "https://schema.org/NewCondition",
-      availability: watch.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-      seller: { "@type": "Organization", name: "MyWatch" },
+      availability: schemaAvailability[watch.availability],
+      seller: { "@type": "Organization", name: sellerName },
     },
   };
 
   return (
     <script
       type="application/ld+json"
-      // Escape "<" so description text can never close the script tag.
+      // Escape "<" so admin-entered text can never close the script tag.
       dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
     />
   );

@@ -140,3 +140,51 @@
     display: none;
   }
 }
+
+/*
+ * Subtle scroll reveal. Pure CSS (scroll-driven animations) so content is never hidden before
+ * hydration or without JavaScript; browsers without support, and users who prefer reduced
+ * motion, simply see the content.
+ */
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 45%;
+    }
+  }
+  /* Opacity only, so it never fights inline transforms (e.g. gallery zoom). */
+  .fade-in {
+    animation: fade-in 0.5s ease-out;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Consistent, visible keyboard focus across the public site. */
+@layer base {
+  a:focus-visible,
+  button:focus-visible,
+  [tabindex]:focus-visible,
+  input:focus-visible,
+  select:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+  }
+}

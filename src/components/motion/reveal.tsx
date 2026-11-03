@@ -1,31 +1,16 @@
-"use client";
-
-import { MotionConfig, motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface RevealProps {
   children: React.ReactNode;
-  /** Delay in seconds before the reveal starts. */
-  delay?: number;
   className?: string;
+  as?: "div" | "li" | "section";
 }
 
 /**
- * Fades and lifts its children into view once, the first time they scroll into the viewport.
- * Reduced motion is handled by MotionConfig (transform skipped, fade kept) rather than by
- * branching the render tree, which would mismatch the server HTML during hydration.
+ * Fades and lifts its children in as they scroll into view. Implemented with CSS scroll-driven
+ * animations (see `.reveal` in globals.css): no JavaScript, never hides server-rendered content,
+ * and disabled for users who prefer reduced motion.
  */
-export function Reveal({ children, delay = 0, className }: RevealProps) {
-  return (
-    <MotionConfig reducedMotion="user">
-      <motion.div
-        className={className}
-        initial={{ opacity: 0, y: 28 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "0px 0px -80px 0px" }}
-        transition={{ duration: 0.8, delay, ease: [0.22, 1, 0.36, 1] }}
-      >
-        {children}
-      </motion.div>
-    </MotionConfig>
-  );
+export function Reveal({ children, className, as: Tag = "div" }: RevealProps) {
+  return <Tag className={cn("reveal", className)}>{children}</Tag>;
 }
