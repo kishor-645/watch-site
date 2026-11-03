@@ -28,29 +28,61 @@ export interface DateFormatOptions {
   timeZone?: string;
 }
 
-function formatInZone(iso: string, locale: string, timeZone: string, parts: Intl.DateTimeFormatOptions): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  try {
-    return new Intl.DateTimeFormat(locale, { ...parts, timeZone }).format(date);
-  } catch {
-    // Invalid locale/time zone from settings: fall back to the shop defaults instead of crashing a page.
-    return new Intl.DateTimeFormat("en-IN", { ...parts, timeZone: SHOP_TIME_ZONE }).format(date);
-  }
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+interface ZonedParts {
+  year: number;
+  month: number; // 1-12
+  day: number;
+  hour: number; // 0-23
+  minute: number;
 }
 
-export function formatDate(iso: string, locale = "en-IN", { timeZone = SHOP_TIME_ZONE }: DateFormatOptions = {}): string {
-  return formatInZone(iso, locale, timeZone, { day: "numeric", month: "short", year: "numeric" });
-}
-
-export function formatDateTime(iso: string, locale = "en-IN", { timeZone = SHOP_TIME_ZONE }: DateFormatOptions = {}): string {
-  return formatInZone(iso, locale, timeZone, {
-    day: "numeric",
-    month: "short",
+/**
+ * Numeric date parts in the given zone. Only numbers come from Intl — they are identical in Node
+ * and every browser — while words/punctuation are added here. Locale-formatted output (e.g. "pm"
+ * vs "PM", narrow no-break spaces) differs between ICU builds and caused hydration mismatches.
+ */
+function zonedParts(date: Date, timeZone: string): ZonedParts {
+  let fmt: Intl.DateTimeFormat;
+  const opts: Intl.DateTimeFormatOptions = {
     year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    hourCycle: "h23",
+  };
+  try {
+    fmt = new Intl.DateTimeFormat("en-US", { ...opts, timeZone });
+  } catch {
+    fmt = new Intl.DateTimeFormat("en-US", { ...opts, timeZone: SHOP_TIME_ZONE });
+  }
+  const get = (type: Intl.DateTimeFormatPartTypes) => Number(fmt.formatToParts(date).find((p) => p.type === type)?.value ?? 0);
+  return { year: get("year"), month: get("month"), day: get("day"), hour: get("hour") % 24, minute: get("minute") };
+}
+
+function toDate(iso: string): Date | null {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/** "3 Nov 2026" in the shop's time zone. `_locale` is accepted for call-compatibility. */
+export function formatDate(iso: string, _locale = "en-IN", { timeZone = SHOP_TIME_ZONE }: DateFormatOptions = {}): string {
+  const date = toDate(iso);
+  if (!date) return "";
+  const p = zonedParts(date, timeZone);
+  return `${p.day} ${MONTHS[p.month - 1]} ${p.year}`;
+}
+
+/** "3 Nov 2026, 02:46 pm" in the shop's time zone — identical on server and client. */
+export function formatDateTime(iso: string, _locale = "en-IN", { timeZone = SHOP_TIME_ZONE }: DateFormatOptions = {}): string {
+  const date = toDate(iso);
+  if (!date) return "";
+  const p = zonedParts(date, timeZone);
+  const h12 = p.hour % 12 || 12;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${p.day} ${MONTHS[p.month - 1]} ${p.year}, ${pad(h12)}:${pad(p.minute)} ${p.hour < 12 ? "am" : "pm"}`;
 }
 
 /** Percentage off, e.g. (80, 100) -> 20. Returns null when there is no discount. */
