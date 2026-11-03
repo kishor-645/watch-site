@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/admin/login-form";
+import { Wordmark } from "@/components/layout/wordmark";
 import { getCurrentAdmin } from "@/server/auth/session";
 import { getSiteSettings } from "@/server/queries/settings";
 
@@ -24,10 +25,12 @@ export default async function AdminLoginPage() {
   const { general } = await getSiteSettings();
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
+    <main data-admin="" className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <p className="font-serif text-3xl tracking-tight text-foreground">{general.siteName}</p>
+          <p>
+            <Wordmark name={general.siteName} />
+          </p>
           <p className="mt-1 text-sm text-muted-foreground">Admin console</p>
         </div>
         <div className="rounded-lg border border-border bg-card p-6 shadow-sm">

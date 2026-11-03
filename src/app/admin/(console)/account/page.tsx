@@ -29,8 +29,8 @@ export default async function AccountPage() {
       <PageHeader title="Account" description="Your sign-in details and password." actions={<LogoutButton variant="outline" />} />
 
       {required && (
-        <div role="alert" className="mb-6 flex gap-3 rounded-lg border border-primary/40 bg-primary/10 p-4 text-sm">
-          <ShieldAlertIcon className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
+        <div role="alert" className="mb-6 flex gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4 text-sm">
+          <ShieldAlertIcon className="mt-0.5 size-5 shrink-0 text-warning" aria-hidden />
           <div>
             <p className="font-semibold text-foreground">Change the initial password to continue</p>
             <p className="mt-1 text-muted-foreground">

@@ -23,8 +23,8 @@ export default function SiteError({ error, reset }: { error: Error & { digest?: 
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center px-6 py-24 text-center md:py-32">
-      <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-gold">Something went wrong</p>
-      <h1 className="mt-4 text-4xl font-light leading-tight sm:text-5xl">We couldn&apos;t load this page</h1>
+      <p className="eyebrow text-muted-foreground">Something went wrong</p>
+      <h1 className="type-h1 mt-4 text-foreground">We couldn&apos;t load this page</h1>
       <p className="mt-6 max-w-md text-sm leading-relaxed text-muted-foreground md:text-base">
         This is usually temporary. Please try again in a moment — or use the WhatsApp button to reach us directly.
       </p>

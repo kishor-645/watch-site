@@ -17,7 +17,9 @@ function pageList(current: number, count: number): (number | "gap")[] {
 }
 
 const item =
-  "inline-flex h-10 min-w-10 items-center justify-center rounded-full border px-3 text-sm tabular-nums transition-colors";
+  "inline-flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-sm px-2 text-sm tabular-nums transition-colors duration-150";
+const step = cn(item, "text-muted-foreground hover:text-foreground");
+const stepDisabled = cn(item, "text-muted-foreground opacity-40");
 
 /** Server-rendered page links that preserve every active filter. */
 export function Pagination({ query, page, pageCount }: { query: CatalogQuery; page: number; pageCount: number }) {
@@ -28,17 +30,19 @@ export function Pagination({ query, page, pageCount }: { query: CatalogQuery; pa
   };
 
   return (
-    <nav aria-label="Pagination" className="mt-16 flex justify-center">
-      <ul className="flex flex-wrap items-center justify-center gap-2">
+    <nav aria-label="Pagination" className="mt-16 flex justify-center border-t border-border pt-8">
+      <ul className="flex flex-wrap items-center justify-center gap-1 sm:gap-2">
         <li>
           {page > 1 ? (
-            <Link href={href(page - 1)} rel="prev" className={cn(item, "border-border hover:border-gold/60 hover:text-gold")}>
+            <Link href={href(page - 1)} rel="prev" className={step}>
               <ChevronLeft aria-hidden className="size-4" />
-              <span className="sr-only">Previous page</span>
+              <span className="sr-only sm:not-sr-only">Previous</span>
+              <span className="sr-only"> page</span>
             </Link>
           ) : (
-            <span aria-hidden className={cn(item, "border-border/50 text-muted-foreground/40")}>
+            <span aria-hidden className={stepDisabled}>
               <ChevronLeft className="size-4" />
+              <span className="hidden sm:inline">Previous</span>
             </span>
           )}
         </li>
@@ -56,8 +60,8 @@ export function Pagination({ query, page, pageCount }: { query: CatalogQuery; pa
                 className={cn(
                   item,
                   p === page
-                    ? "border-gold bg-gold text-primary-foreground"
-                    : "border-border text-foreground/85 hover:border-gold/60 hover:text-gold",
+                    ? "font-medium text-foreground underline decoration-foreground decoration-1 underline-offset-8"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {p}
@@ -67,12 +71,14 @@ export function Pagination({ query, page, pageCount }: { query: CatalogQuery; pa
         )}
         <li>
           {page < pageCount ? (
-            <Link href={href(page + 1)} rel="next" className={cn(item, "border-border hover:border-gold/60 hover:text-gold")}>
+            <Link href={href(page + 1)} rel="next" className={step}>
+              <span className="sr-only sm:not-sr-only">Next</span>
+              <span className="sr-only"> page</span>
               <ChevronRight aria-hidden className="size-4" />
-              <span className="sr-only">Next page</span>
             </Link>
           ) : (
-            <span aria-hidden className={cn(item, "border-border/50 text-muted-foreground/40")}>
+            <span aria-hidden className={stepDisabled}>
+              <span className="hidden sm:inline">Next</span>
               <ChevronRight className="size-4" />
             </span>
           )}

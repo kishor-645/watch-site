@@ -4,10 +4,12 @@ import { container } from "@/components/home/section-heading";
 import { ProductCard } from "@/components/product/product-card";
 import { ProductDetails } from "@/components/product/product-details";
 import { ProductGallery } from "@/components/product/product-gallery";
-import { ProductInfo } from "@/components/product/product-info";
+import { ENQUIRY_CTA_ID, ProductInfo } from "@/components/product/product-info";
 import { ProductJsonLd } from "@/components/product/product-json-ld";
+import { StickyEnquiryBar } from "@/components/product/sticky-enquiry-bar";
 import { Breadcrumbs } from "@/components/shop/breadcrumbs";
 import { toParagraphs } from "@/components/site/text";
+import { formatPrice } from "@/lib/format";
 import { optionLabel } from "@/lib/schemas/settings";
 import { absoluteUrl, productPath } from "@/lib/site-url";
 import { watchEnquiryUrl } from "@/lib/whatsapp";
@@ -57,6 +59,7 @@ export default async function WatchPage({ params }: Props) {
   const categoryLabel = optionLabel(settings.catalog.categories, watch.category);
   const movementLabel = optionLabel(settings.catalog.movements, watch.movement);
   const currency = settings.general;
+  const enquiryHref = watchEnquiryUrl(settings, watch, url);
 
   return (
     <>
@@ -68,7 +71,7 @@ export default async function WatchPage({ params }: Props) {
         categoryLabel={categoryLabel}
       />
 
-      <div className={`${container} pt-6 md:pt-10`}>
+      <div className={`${container} pt-5 md:pt-8`}>
         <Breadcrumbs
           items={[
             { label: "Home", href: "/" },
@@ -81,42 +84,51 @@ export default async function WatchPage({ params }: Props) {
 
       <section
         aria-label={`${watch.name} overview`}
-        className={`${container} grid gap-10 pb-16 pt-6 md:grid-cols-2 md:gap-12 md:pt-10 lg:gap-16 lg:pb-24`}
+        className={`${container} grid gap-8 pb-section pt-5 md:grid-cols-12 md:gap-10 md:pt-8 lg:gap-16 xl:gap-24`}
       >
-        <div className="md:sticky md:top-28 md:self-start">
+        <div className="md:sticky md:top-24 md:col-span-7 md:self-start">
           <ProductGallery images={watch.images.map(({ url, alt }) => ({ url, alt }))} name={watch.name} />
         </div>
-        <ProductInfo
-          watch={watch}
-          categoryLabel={categoryLabel}
-          currency={currency}
-          contact={settings.contact}
-          enquiryHref={watchEnquiryUrl(settings, watch, url)}
-        />
+        <div className="md:col-span-5 md:pt-2">
+          <ProductInfo
+            watch={watch}
+            categoryLabel={categoryLabel}
+            currency={currency}
+            contact={settings.contact}
+            trustItems={settings.home.trustItems}
+            enquiryHref={enquiryHref}
+          />
+        </div>
       </section>
 
-      <div className="border-t border-border bg-charcoal/40">
-        <div className={`${container} py-16 md:py-20`}>
+      <div className="border-t border-border">
+        <div className={`${container} py-section`}>
           <ProductDetails watch={watch} categoryLabel={categoryLabel} movementLabel={movementLabel} />
         </div>
       </div>
 
       {related.length > 0 && (
         <section aria-labelledby="related-heading" className="border-t border-border">
-          <div className={`${container} pt-16 md:pt-20`}>
-            <h2 id="related-heading" className="mb-10 text-center text-3xl font-light md:text-4xl">
+          <div className={`${container} py-section`}>
+            <h2 id="related-heading" className="type-h2 text-foreground">
               You may also like
             </h2>
-            <ul className="grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 lg:grid-cols-4">
+            <ul className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:mt-14 lg:grid-cols-4 lg:gap-x-8 lg:gap-y-14">
               {related.map((w) => (
                 <li key={w.id}>
-                  <ProductCard watch={w} currency={currency} sizes="(min-width: 1024px) 22vw, 50vw" />
+                  <ProductCard
+                    watch={w}
+                    currency={currency}
+                    sizes="(min-width: 1320px) 290px, (min-width: 1024px) 23vw, (min-width: 768px) 31vw, 50vw"
+                  />
                 </li>
               ))}
             </ul>
           </div>
         </section>
       )}
+
+      <StickyEnquiryBar targetId={ENQUIRY_CTA_ID} price={formatPrice(watch.price, currency)} href={enquiryHref} />
     </>
   );
 }

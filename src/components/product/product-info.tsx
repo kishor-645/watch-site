@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { Check, Mail, Phone } from "lucide-react";
-import { ctaSecondary } from "@/components/home/section-heading";
+import { TrustList } from "@/components/home/trust-bar";
 import { telHref } from "@/components/site/text";
 import { WhatsAppLink } from "@/components/site/whatsapp-link";
 import type { CurrencyOptions } from "@/lib/format";
@@ -14,17 +13,25 @@ const AVAILABILITY_NOTE: Partial<Record<Watch["availability"], string>> = {
   sold_out: "Currently sold out — message us to ask about availability or a similar piece.",
 };
 
+const contactLink =
+  "rounded-sm font-medium text-foreground underline decoration-border underline-offset-[6px] transition-colors duration-150 hover:decoration-foreground";
+
+/** Id of the main enquiry button; the mobile sticky bar appears once it scrolls out of view. */
+export const ENQUIRY_CTA_ID = "enquiry-cta";
+
 export function ProductInfo({
   watch,
   categoryLabel,
   currency,
   contact,
+  trustItems,
   enquiryHref,
 }: {
   watch: Watch;
   categoryLabel: string;
   currency: CurrencyOptions;
   contact: SiteSettings["contact"];
+  trustItems: SiteSettings["home"]["trustItems"];
   enquiryHref: string;
 }) {
   const soldOut = watch.availability === "sold_out";
@@ -32,80 +39,83 @@ export function ProductInfo({
 
   return (
     <div className="flex flex-col">
-      <p className="flex flex-wrap items-center gap-3 text-[11px] font-medium uppercase tracking-[0.3em] text-gold">
-        {watch.brand}
-        <span aria-hidden className="h-px w-6 bg-gold/50" />
+      <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="eyebrow text-foreground">{watch.brand}</span>
+        <span aria-hidden className="text-muted-foreground">
+          ·
+        </span>
         <Link
           href={`/shop?category=${encodeURIComponent(watch.category)}`}
-          className="rounded-sm text-muted-foreground transition-colors hover:text-gold"
+          className="eyebrow rounded-sm text-muted-foreground transition-colors duration-150 hover:text-foreground"
         >
           {categoryLabel}
         </Link>
       </p>
 
-      <h1 className="mt-4 text-4xl font-light leading-[1.05] sm:text-5xl">{watch.name}</h1>
+      <h1 className="type-h1 mt-4 text-balance text-foreground">{watch.name}</h1>
       {watch.modelNumber && (
-        <p className="mt-3 text-xs uppercase tracking-[0.25em] text-muted-foreground">
-          Ref. <span className="text-foreground/80">{watch.modelNumber}</span>
+        <p className="type-small mt-3 text-muted-foreground">
+          Ref. <span className="tabular-nums text-foreground">{watch.modelNumber}</span>
         </p>
       )}
 
-      <Price
-        price={watch.price}
-        originalPrice={watch.originalPrice}
-        currency={currency}
-        size="lg"
-        className="mt-7"
-      />
+      <Price price={watch.price} originalPrice={watch.originalPrice} currency={currency} size="lg" className="mt-6" />
 
-      <div className="mt-5">
-        <AvailabilityBadge availability={watch.availability} className="text-[0.7rem]" />
-        {note && <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{note}</p>}
+      <div className="mt-3">
+        <AvailabilityBadge availability={watch.availability} />
+        {note && <p className="type-small mt-2 max-w-[52ch] text-muted-foreground">{note}</p>}
       </div>
 
       <div className="mt-8 flex flex-col gap-3">
-        <WhatsAppLink href={enquiryHref} className="w-full sm:text-xs">
-          {soldOut ? "Ask about availability" : "Check availability"}
-        </WhatsAppLink>
-        {(contact.phone || contact.email) && (
-          <div className="flex flex-col gap-3 sm:flex-row">
-            {contact.phone && (
-              <a href={telHref(contact.phone)} className={`${ctaSecondary} flex-1`}>
-                <Phone className="size-4" strokeWidth={1.5} aria-hidden />
-                Call
-                <span className="sr-only"> {contact.phone}</span>
-              </a>
-            )}
-            {contact.email && (
-              <a
-                href={`mailto:${contact.email}?subject=${encodeURIComponent(`Enquiry: ${watch.name}`)}`}
-                className={`${ctaSecondary} flex-1`}
-              >
-                <Mail className="size-4" strokeWidth={1.5} aria-hidden />
-                Email
-                <span className="sr-only"> {contact.email}</span>
-              </a>
-            )}
-          </div>
-        )}
-        <p className="text-xs leading-relaxed text-muted-foreground">
+        <div id={ENQUIRY_CTA_ID}>
+          <WhatsAppLink href={enquiryHref} className="min-h-13 w-full">
+            {soldOut ? "Ask about availability" : "Check availability"}
+          </WhatsAppLink>
+        </div>
+        <p className="type-small text-muted-foreground">
           The WhatsApp message is pre-filled with this watch&apos;s details — just press send.
         </p>
+        {(contact.phone || contact.email) && (
+          <p className="type-small text-muted-foreground">
+            <>
+              {contact.phone && (
+                <a href={telHref(contact.phone)} className={contactLink}>
+                  Call
+                  <span className="sr-only"> {contact.phone}</span>
+                </a>
+              )}
+              {contact.phone && contact.email && (
+                <span aria-hidden className="px-1.5">
+                  ·
+                </span>
+              )}
+              {contact.email && (
+                <a
+                  href={`mailto:${contact.email}?subject=${encodeURIComponent(`Enquiry: ${watch.name}`)}`}
+                  className={contactLink}
+                >
+                  Email
+                  <span className="sr-only"> {contact.email}</span>
+                </a>
+              )}
+            </>
+          </p>
+        )}
       </div>
 
+      <TrustList items={trustItems} className="mt-8" />
+
       {watch.shortDescription && (
-        <p className="mt-8 max-w-xl border-t border-border pt-8 text-base leading-relaxed text-foreground/85">
-          {watch.shortDescription}
-        </p>
+        <p className="type-lede mt-8 max-w-[60ch] border-t border-border pt-8 text-foreground">{watch.shortDescription}</p>
       )}
 
       {watch.features.length > 0 && (
         <div className="mt-8">
-          <h2 className="font-sans text-[11px] font-medium uppercase tracking-[0.3em] text-gold">Highlights</h2>
-          <ul className="mt-4 space-y-3">
+          <h2 className="eyebrow text-muted-foreground">Highlights</h2>
+          <ul className="mt-4 space-y-2.5">
             {watch.features.map((f) => (
-              <li key={f} className="flex items-start gap-3 text-sm leading-relaxed text-foreground/85">
-                <Check aria-hidden className="mt-0.5 size-4 shrink-0 text-gold" strokeWidth={1.75} />
+              <li key={f} className="flex items-start gap-3 text-[0.9375rem] leading-relaxed text-foreground">
+                <span aria-hidden className="mt-[0.6875rem] size-1 shrink-0 rounded-full bg-foreground" />
                 {f}
               </li>
             ))}

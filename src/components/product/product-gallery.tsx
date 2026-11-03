@@ -13,7 +13,7 @@ export interface GalleryImage {
 const pad = (n: number) => String(n).padStart(2, "0");
 // Shared by the mobile track and the desktop stage so both `priority` copies of the first image
 // resolve to the same srcset candidate (one download, not two).
-const MAIN_SIZES = "(min-width: 1440px) 680px, (min-width: 768px) 50vw, 100vw";
+const MAIN_SIZES = "(min-width: 1320px) 660px, (min-width: 768px) 52vw, 100vw";
 
 export function ProductGallery({ images, name }: { images: GalleryImage[]; name: string }) {
   const count = images.length;
@@ -63,7 +63,7 @@ export function ProductGallery({ images, name }: { images: GalleryImage[]; name:
   };
 
   if (!count) {
-    return <div className="aspect-square w-full rounded-sm border border-border bg-card" />;
+    return <div className="aspect-square w-full bg-surface-2" />;
   }
 
   return (
@@ -78,12 +78,12 @@ export function ProductGallery({ images, name }: { images: GalleryImage[]; name:
           role="region"
           aria-roledescription="carousel"
           aria-label={`${name} — image gallery${count > 1 ? ", swipe to browse" : ""}`}
-          className="no-scrollbar -mx-5 flex snap-x snap-mandatory overflow-x-auto bg-card sm:-mx-8"
+          className="no-scrollbar -mx-5 flex snap-x snap-mandatory overflow-x-auto bg-surface-2 sm:-mx-8"
         >
           {images.map((img, i) => (
             <div
               key={img.url + i}
-              className="relative aspect-square w-full shrink-0 snap-center snap-always"
+              className="relative aspect-square w-full shrink-0 snap-center snap-always bg-surface-2"
               role="group"
               aria-roledescription="slide"
               aria-label={`${i + 1} of ${count}`}
@@ -94,13 +94,13 @@ export function ProductGallery({ images, name }: { images: GalleryImage[]; name:
                 fill
                 priority={i === 0}
                 sizes={MAIN_SIZES}
-                className="object-cover"
+                className="object-contain mix-blend-multiply"
               />
             </div>
           ))}
         </div>
         {count > 1 && (
-          <div className="mt-3 flex items-center justify-center gap-1">
+          <div className="mt-2 flex items-center justify-center gap-1">
             {images.map((_, i) => (
               <button
                 key={i}
@@ -108,12 +108,12 @@ export function ProductGallery({ images, name }: { images: GalleryImage[]; name:
                 onClick={() => select(i)}
                 aria-label={`Show image ${i + 1} of ${count}`}
                 aria-current={i === active}
-                className="group grid size-7 place-items-center rounded-full"
+                className="group grid h-8 w-9 place-items-center"
               >
                 <span
                   className={cn(
-                    "block h-1 rounded-full transition-all duration-300",
-                    i === active ? "w-5 bg-gold" : "w-1.5 bg-foreground/30 group-hover:bg-foreground/60",
+                    "block h-0.5 w-6 transition-colors duration-300",
+                    i === active ? "bg-foreground" : "bg-border group-hover:bg-muted-foreground",
                   )}
                 />
               </button>
@@ -131,7 +131,7 @@ export function ProductGallery({ images, name }: { images: GalleryImage[]; name:
         onKeyDown={onKeyDown}
         onPointerMove={onPointerMove}
         onPointerLeave={() => setZoom(null)}
-        className="group relative hidden aspect-square w-full cursor-zoom-in overflow-hidden rounded-sm border border-border bg-card md:block"
+        className="group relative hidden aspect-square w-full cursor-zoom-in overflow-hidden bg-surface-2 motion-reduce:cursor-default md:block"
       >
         <Image
           key={active}
@@ -140,47 +140,46 @@ export function ProductGallery({ images, name }: { images: GalleryImage[]; name:
           fill
           priority={active === 0}
           sizes={MAIN_SIZES}
-          className="fade-in object-cover transition-transform duration-300 ease-out will-change-transform"
+          className="fade-in object-contain mix-blend-multiply transition-transform duration-300 ease-quiet will-change-transform motion-reduce:transform-none!"
           style={{
             transformOrigin: zoom ? `${zoom.x}% ${zoom.y}%` : "50% 50%",
-            transform: zoom ? "scale(1.8)" : "scale(1)",
+            transform: zoom ? "scale(1.6)" : "scale(1)",
           }}
         />
 
         {count > 1 && (
           <>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute bottom-4 right-4 rounded-full bg-background/70 px-3 py-1.5 text-[11px] uppercase tabular-nums tracking-[0.3em] text-foreground/80 backdrop-blur transition-opacity group-hover:opacity-0"
-            >
-              {pad(active + 1)} / {pad(count)}
-            </span>
             <GalleryArrow side="left" onClick={() => select(active - 1)} />
             <GalleryArrow side="right" onClick={() => select(active + 1)} />
           </>
         )}
       </div>
 
-      {/* Thumbnails (tablet/desktop) */}
+      {/* Thumbnails + counter (tablet/desktop) */}
       {count > 1 && (
-        <ul className="hidden grid-cols-5 gap-3 md:grid" aria-label="Choose image">
-          {images.map((img, i) => (
-            <li key={img.url + i}>
-              <button
-                type="button"
-                onClick={() => select(i)}
-                aria-label={`Show image ${i + 1} of ${count}`}
-                aria-current={i === active}
-                className={cn(
-                  "relative block aspect-square w-full overflow-hidden rounded-sm border bg-card transition-[opacity,border-color] duration-300",
-                  i === active ? "border-gold/70 opacity-100" : "border-border opacity-60 hover:border-gold/30 hover:opacity-90",
-                )}
-              >
-                <Image src={img.url} alt="" fill sizes="120px" className="object-cover" />
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="hidden items-start justify-between gap-6 md:flex">
+          <ul className="flex flex-wrap gap-2" aria-label="Choose image">
+            {images.map((img, i) => (
+              <li key={img.url + i}>
+                <button
+                  type="button"
+                  onClick={() => select(i)}
+                  aria-label={`Show image ${i + 1} of ${count}`}
+                  aria-current={i === active}
+                  className={cn(
+                    "relative block size-[72px] overflow-hidden bg-surface-2 outline-offset-0 transition-opacity duration-300",
+                    i === active ? "opacity-100 outline outline-1 outline-foreground" : "opacity-70 hover:opacity-100",
+                  )}
+                >
+                  <Image src={img.url} alt="" fill sizes="72px" className="object-contain mix-blend-multiply" />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p aria-hidden className="type-small shrink-0 pt-1 tabular-nums text-muted-foreground">
+            {pad(active + 1)} / {pad(count)}
+          </p>
+        </div>
       )}
     </div>
   );
@@ -197,7 +196,7 @@ function GalleryArrow({ side, onClick }: { side: "left" | "right"; onClick: () =
       }}
       aria-label={side === "left" ? "Previous image" : "Next image"}
       className={cn(
-        "absolute top-1/2 grid size-11 -translate-y-1/2 cursor-pointer place-items-center rounded-full border border-border bg-background/70 text-foreground/80 opacity-0 backdrop-blur transition-opacity duration-300 hover:border-gold/50 hover:text-gold focus-visible:opacity-100 group-hover:opacity-100",
+        "absolute top-1/2 grid size-10 -translate-y-1/2 cursor-pointer place-items-center rounded-full border border-border bg-background text-foreground opacity-0 transition-[opacity,border-color] duration-300 ease-quiet hover:border-foreground focus-visible:opacity-100 group-hover:opacity-100 group-focus-visible:opacity-100",
         side === "left" ? "left-4" : "right-4",
       )}
     >

@@ -7,8 +7,9 @@ import { externalLinkProps, telHref } from "@/components/site/text";
 import type { PublicSettings } from "@/lib/types";
 import { displayPhone, generalEnquiryUrl } from "@/lib/whatsapp";
 
-const linkClass = "rounded-sm text-sm text-muted-foreground transition-colors hover:text-gold-light";
-const headingClass = "font-sans text-[0.65rem] font-medium uppercase tracking-[0.3em] text-gold";
+const linkClass = "rounded-sm text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground";
+const headingClass = "eyebrow text-brand";
+const iconClass = "mt-0.5 size-4 shrink-0 text-muted-foreground";
 
 const PAGES = [
   { label: "Shop all watches", href: "/shop" },
@@ -16,6 +17,7 @@ const PAGES = [
   { label: "Contact", href: "/contact" },
 ];
 
+/** Dark footer band: brand, categories, pages, contact details and the legal row. */
 export function Footer({ settings }: { settings: PublicSettings }) {
   const { general, contact, footer, social, catalog } = settings;
   const year = new Date().getFullYear();
@@ -23,9 +25,9 @@ export function Footer({ settings }: { settings: PublicSettings }) {
   const whatsappDisplay = displayPhone(contact.whatsappNumber);
 
   return (
-    <footer className="mt-24 border-t border-gold/15 bg-charcoal/40">
+    <footer className="dark bg-background text-foreground">
       {/* Extra bottom padding on small screens keeps the floating WhatsApp button off the last line. */}
-      <div className="mx-auto w-full max-w-7xl px-5 pb-24 pt-14 sm:px-8 sm:pb-12 lg:px-12 lg:pt-20">
+      <div className="mx-auto w-full max-w-[82.5rem] px-5 pb-26 pt-20 sm:px-8 sm:pb-10 lg:px-12">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-12">
           <div className="lg:col-span-4">
             <Link href="/" aria-label={`${general.siteName} — home`} className="inline-block rounded-sm">
@@ -36,7 +38,6 @@ export function Footer({ settings }: { settings: PublicSettings }) {
                 {footer.blurb || general.tagline}
               </p>
             )}
-            <SocialLinks social={social} siteName={general.siteName} className="mt-6" />
           </div>
 
           <nav aria-labelledby="footer-categories" className="lg:col-span-3 lg:pl-6">
@@ -73,7 +74,7 @@ export function Footer({ settings }: { settings: PublicSettings }) {
             <h2 className={headingClass}>Contact</h2>
             <ul className="mt-5 space-y-3.5 text-sm text-muted-foreground">
               <li className="flex items-start gap-3">
-                <WhatsAppIcon className="mt-0.5 size-4 shrink-0 text-gold" />
+                <WhatsAppIcon className={iconClass} />
                 <a href={generalEnquiryUrl(settings)} {...externalLinkProps} className={linkClass}>
                   <span className="sr-only">WhatsApp: </span>
                   {whatsappDisplay || "Chat on WhatsApp"}
@@ -81,7 +82,7 @@ export function Footer({ settings }: { settings: PublicSettings }) {
               </li>
               {contact.phone && (
                 <li className="flex items-start gap-3">
-                  <Phone className="mt-0.5 size-4 shrink-0 text-gold" strokeWidth={1.5} aria-hidden />
+                  <Phone className={iconClass} strokeWidth={1.5} aria-hidden />
                   <a href={telHref(contact.phone)} className={linkClass}>
                     {contact.phone}
                   </a>
@@ -89,7 +90,7 @@ export function Footer({ settings }: { settings: PublicSettings }) {
               )}
               {contact.email && (
                 <li className="flex items-start gap-3">
-                  <Mail className="mt-0.5 size-4 shrink-0 text-gold" strokeWidth={1.5} aria-hidden />
+                  <Mail className={iconClass} strokeWidth={1.5} aria-hidden />
                   <a href={`mailto:${contact.email}`} className={`${linkClass} break-all`}>
                     {contact.email}
                   </a>
@@ -97,13 +98,13 @@ export function Footer({ settings }: { settings: PublicSettings }) {
               )}
               {contact.address && (
                 <li className="flex items-start gap-3">
-                  <MapPin className="mt-0.5 size-4 shrink-0 text-gold" strokeWidth={1.5} aria-hidden />
+                  <MapPin className={iconClass} strokeWidth={1.5} aria-hidden />
                   <address className="whitespace-pre-line not-italic leading-relaxed">{contact.address}</address>
                 </li>
               )}
               {contact.businessHours && (
                 <li className="flex items-start gap-3">
-                  <Clock className="mt-0.5 size-4 shrink-0 text-gold" strokeWidth={1.5} aria-hidden />
+                  <Clock className={iconClass} strokeWidth={1.5} aria-hidden />
                   <span>{contact.businessHours}</span>
                 </li>
               )}
@@ -111,8 +112,9 @@ export function Footer({ settings }: { settings: PublicSettings }) {
           </div>
         </div>
 
-        <div className="mt-14 border-t border-border pt-8">
-          <p className="text-xs tracking-wide text-muted-foreground">{copyright}</p>
+        <div className="mt-16 flex flex-col gap-6 border-t border-border pt-8 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-muted-foreground">{copyright}</p>
+          <SocialLinks social={social} siteName={general.siteName} />
         </div>
       </div>
     </footer>

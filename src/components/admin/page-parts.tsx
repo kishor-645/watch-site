@@ -29,7 +29,7 @@ export function PageHeader({
             {back.label}
           </Link>
         )}
-        <h1 className="font-serif text-3xl leading-tight font-medium tracking-tight">{title}</h1>
+        <h1 className="font-sans text-2xl leading-tight font-semibold tracking-tight">{title}</h1>
         {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -38,31 +38,34 @@ export function PageHeader({
 }
 
 const availabilityTone: Record<Availability, string> = {
-  in_stock: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
-  limited: "border-amber-500/30 bg-amber-500/10 text-amber-300",
-  pre_order: "border-sky-500/30 bg-sky-500/10 text-sky-300",
-  sold_out: "border-red-500/30 bg-red-500/10 text-red-300",
+  in_stock: "text-success",
+  limited: "text-warning",
+  pre_order: "text-info",
+  sold_out: "text-muted-foreground",
 };
 
+/** Availability as coloured text with a dot (no pill). */
 export function AvailabilityBadge({ value }: { value: Availability }) {
   return (
     <span
       className={cn(
-        "inline-flex h-5 items-center rounded-full border px-2 text-xs font-medium whitespace-nowrap",
+        "inline-flex h-5 items-center gap-1.5 text-xs font-medium whitespace-nowrap",
         availabilityTone[value],
       )}
     >
+      <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-current" />
       {availabilityLabels[value]}
     </span>
   );
 }
 
+/** Published = ink outline; Draft = muted. */
 export function StatusBadge({ published }: { published: boolean }) {
   return (
     <span
       className={cn(
         "inline-flex h-5 items-center rounded-full border px-2 text-xs font-medium whitespace-nowrap",
-        published ? "border-primary/40 bg-primary/10 text-primary" : "border-border bg-muted text-muted-foreground",
+        published ? "border-foreground/70 text-foreground" : "border-border bg-muted text-muted-foreground",
       )}
     >
       {published ? "Published" : "Draft"}
@@ -118,7 +121,7 @@ export function Pagination({
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(total, page * pageSize);
   const linkClass =
-    "inline-flex h-8 items-center gap-1 rounded-lg border border-input bg-input/30 px-2.5 text-sm font-medium outline-none hover:bg-input/50 focus-visible:ring-3 focus-visible:ring-ring/50";
+    "inline-flex h-8 items-center gap-1 rounded-lg border border-input bg-card px-2.5 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50";
   const disabledClass = "inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2.5 text-sm text-muted-foreground/50";
 
   return (

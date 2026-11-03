@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Clock, ExternalLink, Mail, MapPin, Phone } from "lucide-react";
 import { PageHero } from "@/components/home/page-hero";
-import { container } from "@/components/home/section-heading";
-import { WhatsAppIcon } from "@/components/site/icons";
+import { container, textLink } from "@/components/home/section-heading";
 import { SocialLinks } from "@/components/site/social-links";
 import { externalLinkProps, telHref } from "@/components/site/text";
 import { WhatsAppLink } from "@/components/site/whatsapp-link";
@@ -19,15 +18,16 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const linkClass = "rounded-sm text-foreground transition-colors hover:text-gold-light";
+const linkClass =
+  "rounded-sm text-foreground underline decoration-border underline-offset-[6px] transition-colors duration-150 hover:decoration-foreground";
 
 function Row({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
-    <div className="flex gap-4 border-b border-border py-5 last:border-0">
-      <span className="mt-0.5 shrink-0 text-gold">{icon}</span>
+    <div className="flex gap-4 border-b border-border py-5 first:pt-0 last:border-0">
+      <span className="mt-0.5 shrink-0 text-muted-foreground">{icon}</span>
       <div className="min-w-0">
-        <dt className="text-[0.65rem] font-medium uppercase tracking-[0.28em] text-muted-foreground">{label}</dt>
-        <dd className="mt-1.5 text-sm leading-relaxed sm:text-base">{children}</dd>
+        <dt className="type-small text-muted-foreground">{label}</dt>
+        <dd className="mt-1 text-[0.9375rem] leading-relaxed text-foreground sm:text-base">{children}</dd>
       </div>
     </div>
   );
@@ -38,66 +38,53 @@ export default async function ContactPage() {
   const { contact, general, social } = settings;
   const whatsappHref = generalEnquiryUrl(settings);
   const whatsappDisplay = displayPhone(contact.whatsappNumber);
-  const iconClass = "size-5";
+  const iconClass = "size-[18px]";
 
   return (
     <>
-      <PageHero
-        eyebrow="Contact"
-        title="We are here to help"
-        description="The quickest way to reach us is WhatsApp — ask about availability, pricing or request more photos of any watch."
-      />
+      <PageHero title="Contact" description={general.tagline || undefined} />
 
-      <div className={cn(container, "grid gap-10 pt-14 lg:grid-cols-12 lg:gap-16 lg:pt-20")}>
+      <div className={cn(container, "grid gap-12 py-section lg:grid-cols-12 lg:gap-16 xl:gap-24")}>
         <section
           aria-labelledby="whatsapp-heading"
-          className="flex flex-col items-start border border-gold/25 bg-charcoal/60 p-8 sm:p-10 lg:col-span-5 lg:self-start"
+          className="flex flex-col items-start bg-card p-6 sm:p-10 lg:col-span-5 lg:self-start"
         >
-          <span className="grid size-12 place-items-center rounded-full border border-gold/40 text-gold">
-            <WhatsAppIcon className="size-6" />
-          </span>
-          <h2 id="whatsapp-heading" className="mt-6 text-3xl font-medium">
+          <h2 id="whatsapp-heading" className="type-h3 text-foreground">
             Message us on WhatsApp
           </h2>
-          <p className="mt-3 text-muted-foreground">
-            Send us a message any time{contact.businessHours ? ` — we reply during business hours (${contact.businessHours})` : ""}.
-          </p>
-          {whatsappDisplay && <p className="mt-6 font-serif text-2xl tabular-nums text-gold">{whatsappDisplay}</p>}
-          <WhatsAppLink href={whatsappHref} className="mt-8 w-full sm:w-auto">
+          {whatsappDisplay && (
+            <p className="mt-4 font-sans text-xl font-medium tabular-nums text-foreground">{whatsappDisplay}</p>
+          )}
+          <WhatsAppLink href={whatsappHref} className="mt-8 w-full">
             Chat on WhatsApp
           </WhatsAppLink>
+          {contact.businessHours && <p className="type-small mt-4 text-muted-foreground">{contact.businessHours}</p>}
         </section>
 
         <section aria-labelledby="details-heading" className="lg:col-span-7">
-          <h2 id="details-heading" className="text-3xl font-medium">
+          <h2 id="details-heading" className="type-h3 text-foreground">
             {general.siteName}
           </h2>
-          <dl className="mt-4">
+          <dl className="mt-6">
             {contact.phone && (
-              <Row icon={<Phone className={iconClass} strokeWidth={1.25} aria-hidden />} label="Phone">
+              <Row icon={<Phone className={iconClass} strokeWidth={1.5} aria-hidden />} label="Phone">
                 <a href={telHref(contact.phone)} className={linkClass}>
                   {contact.phone}
                 </a>
               </Row>
             )}
             {contact.email && (
-              <Row icon={<Mail className={iconClass} strokeWidth={1.25} aria-hidden />} label="Email">
+              <Row icon={<Mail className={iconClass} strokeWidth={1.5} aria-hidden />} label="Email">
                 <a href={`mailto:${contact.email}`} className={cn(linkClass, "break-all")}>
                   {contact.email}
                 </a>
               </Row>
             )}
             {(contact.address || contact.mapUrl) && (
-              <Row icon={<MapPin className={iconClass} strokeWidth={1.25} aria-hidden />} label="Address">
-                {contact.address && (
-                  <address className="whitespace-pre-line not-italic text-foreground">{contact.address}</address>
-                )}
+              <Row icon={<MapPin className={iconClass} strokeWidth={1.5} aria-hidden />} label="Address">
+                {contact.address && <address className="whitespace-pre-line not-italic">{contact.address}</address>}
                 {contact.mapUrl && (
-                  <a
-                    href={contact.mapUrl}
-                    {...externalLinkProps}
-                    className="mt-2 inline-flex items-center gap-2 text-sm text-gold underline-offset-4 hover:underline"
-                  >
+                  <a href={contact.mapUrl} {...externalLinkProps} className={cn(textLink, "mt-2")}>
                     Open in maps
                     <ExternalLink aria-hidden className="size-3.5" />
                     <span className="sr-only">(opens in a new tab)</span>
@@ -106,8 +93,8 @@ export default async function ContactPage() {
               </Row>
             )}
             {contact.businessHours && (
-              <Row icon={<Clock className={iconClass} strokeWidth={1.25} aria-hidden />} label="Business hours">
-                <span className="text-foreground">{contact.businessHours}</span>
+              <Row icon={<Clock className={iconClass} strokeWidth={1.5} aria-hidden />} label="Business hours">
+                {contact.businessHours}
               </Row>
             )}
           </dl>

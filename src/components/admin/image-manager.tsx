@@ -143,7 +143,7 @@ export function ImageManager({
   return (
     <div className="flex flex-col gap-4" data-field="images" data-invalid={listError ? "true" : undefined}>
       {storageUnavailable && (
-        <div role="alert" className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+        <div role="alert" className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning">
           {STORAGE_NOT_CONFIGURED} You can still add images by URL below.
         </div>
       )}
@@ -305,6 +305,10 @@ export function ImageManager({
           </p>
           <p className="text-xs text-muted-foreground">
             JPEG, PNG, WebP or AVIF · up to 5 MB each · {remaining} of {MAX_IMAGES} remaining
+          </p>
+          <p className="max-w-md text-xs text-muted-foreground">
+            Best results: square, at least 1600 px, watch centred on a plain light background. The first image is the
+            cover.
           </p>
           <input
             ref={fileInput}

@@ -9,75 +9,75 @@ interface HeroProps {
   eyebrow: string;
   title: string;
   subtitle: string;
-  image: { url: string; alt: string } | null;
-  /** Watch featured in the hero (chip + "Check availability"); null for an empty catalogue. */
+  /**
+   * `lifestyle`: an admin-chosen hero photograph (cropped to fill the frame).
+   * `product`: the featured watch's first photo (blended into the stone backdrop).
+   */
+  image: { url: string; alt: string; kind: "lifestyle" | "product" } | null;
+  /** Watch featured in the hero ("Check availability" + featured line); null for an empty catalogue. */
   watch: { name: string; href: string; price: string } | null;
   enquiryHref: string;
 }
 
+/** Split hero: text on ivory beside a 4:5 image on stone. No veils, no text over the photograph. */
 export function Hero({ eyebrow, title, subtitle, image, watch, enquiryHref }: HeroProps) {
   return (
-    <section
-      aria-labelledby="hero-heading"
-      className={cn(
-        "relative flex overflow-hidden border-b border-gold/10 bg-background",
-        image ? "min-h-[78svh] items-end lg:min-h-[86svh] lg:items-center" : "items-center py-24 lg:py-32",
-      )}
-    >
-      {image && (
-        <>
-          <Image
-            src={image.url}
-            alt={image.alt}
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover object-center lg:object-[70%_center]"
-          />
-          {/* Legibility veils (kept light so the photograph stays the hero). */}
-          <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/10 lg:hidden" />
-          <div aria-hidden className="absolute inset-0 hidden bg-gradient-to-r from-background/95 via-background/60 to-transparent lg:block" />
-        </>
-      )}
+    <section aria-labelledby="hero-heading" className="border-b border-border">
+      <div
+        className={cn(
+          "mx-auto grid w-full max-w-[82.5rem] lg:min-h-[min(88svh,860px)] lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-12",
+          !image && "lg:grid-cols-1",
+        )}
+      >
+        {image && (
+          <div className="relative aspect-[4/5] w-full overflow-hidden bg-surface-2 sm:aspect-[5/4] lg:order-2 lg:my-12 lg:aspect-[4/5]">
+            <Image
+              src={image.url}
+              alt={image.alt}
+              fill
+              priority
+              sizes="(min-width: 1320px) 600px, (min-width: 1024px) 46vw, 100vw"
+              // The catalogue's product photos are full-frame shots, so both kinds fill the frame;
+              // product shots are blended so white studio backgrounds take on the stone tone.
+              className={cn("object-cover", image.kind === "product" && "mix-blend-multiply")}
+            />
+          </div>
+        )}
 
-      <div className={cn(container, "relative z-10 pb-14 pt-28 lg:py-24")}>
-        <div className="fade-in max-w-2xl">
-          {eyebrow && (
-            <p className="flex items-center gap-3 text-[0.7rem] font-medium uppercase tracking-[0.35em] text-gold">
-              <span aria-hidden className="h-px w-10 bg-gold/70" />
-              {eyebrow}
-            </p>
-          )}
-          <h1
-            id="hero-heading"
-            className="mt-5 text-[2.6rem] font-medium leading-[1.02] text-foreground sm:text-6xl lg:text-7xl"
-          >
+        <div className={cn(container, "fade-in py-12 sm:py-16 lg:max-w-none lg:px-0 lg:py-20", !image && "lg:py-32")}>
+          {eyebrow && <p className="eyebrow text-muted-foreground">{eyebrow}</p>}
+          <h1 id="hero-heading" className="type-display mt-5 max-w-[14ch] text-balance text-foreground">
             {title}
           </h1>
-          {subtitle && (
-            <p className="mt-6 max-w-lg text-base leading-relaxed text-foreground/80 sm:text-lg">{subtitle}</p>
-          )}
+          {subtitle && <p className="type-lede mt-6 max-w-[52ch] text-muted-foreground">{subtitle}</p>}
 
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:gap-4">
+          <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <WhatsAppLink href={enquiryHref}>{watch ? "Check availability" : "Chat on WhatsApp"}</WhatsAppLink>
             <Link href="/shop" className={ctaSecondary}>
               Explore the collection
-              <ArrowRight className="size-4 transition-transform group-hover/cta:translate-x-1" aria-hidden />
             </Link>
-            <WhatsAppLink href={enquiryHref}>{watch ? "Check availability" : "Chat on WhatsApp"}</WhatsAppLink>
           </div>
 
           {watch && (
-            <Link
-              href={watch.href}
-              className="mt-10 inline-flex items-center gap-5 border border-gold/25 bg-background/60 px-5 py-3.5 backdrop-blur-md transition-colors hover:border-gold/60"
-            >
-              <span>
-                <span className="block text-[0.6rem] uppercase tracking-[0.3em] text-muted-foreground">Featured</span>
-                <span className="mt-1 block font-serif text-lg text-foreground">{watch.name}</span>
-              </span>
-              <span aria-hidden className="h-9 w-px bg-gold/30" />
-              <span className="font-serif text-lg font-semibold text-gold">{watch.price}</span>
-            </Link>
+            <p className="mt-10 border-t border-border pt-6">
+              <span className="type-small block text-muted-foreground">Featured</span>
+              <Link
+                href={watch.href}
+                className="group/featured mt-1 inline-flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-sm"
+              >
+                <span className="font-serif text-xl text-foreground underline decoration-border decoration-1 underline-offset-[6px] transition-colors duration-150 group-hover/featured:decoration-foreground">
+                  {watch.name}
+                </span>
+                <span aria-hidden className="text-muted-foreground">
+                  ·
+                </span>
+                <span className="type-price-md text-foreground">{watch.price}</span>
+                <ArrowRight
+                  aria-hidden
+                  className="size-4 self-center text-muted-foreground transition-transform duration-150 group-hover/featured:translate-x-0.5"
+                />
+              </Link>
+            </p>
           )}
         </div>
       </div>

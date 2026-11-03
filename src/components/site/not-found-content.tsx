@@ -7,8 +7,8 @@ export function NotFoundContent({ headingLevel: Heading = "h1" }: { headingLevel
   return (
     <div className="mx-auto flex max-w-3xl flex-col items-center px-6 py-20 text-center md:py-28">
       <StoppedDial />
-      <p className="mt-10 text-[11px] font-medium uppercase tracking-[0.3em] text-gold">Error 404</p>
-      <Heading className="mt-4 text-4xl font-light leading-tight sm:text-5xl">This page could not be found</Heading>
+      <p className="eyebrow mt-10 text-muted-foreground">Error 404</p>
+      <Heading className="type-h1 mt-4 text-foreground">This page could not be found</Heading>
       <p className="mt-6 max-w-md text-sm leading-relaxed text-muted-foreground md:text-base">
         The page you are looking for has moved, is no longer available, or the link is incorrect.
       </p>
@@ -29,7 +29,7 @@ export function NotFoundContent({ headingLevel: Heading = "h1" }: { headingLevel
 function StoppedDial() {
   const ticks = Array.from({ length: 60 }, (_, i) => i);
   return (
-    <svg viewBox="0 0 200 200" className="size-32 text-gold md:size-40" aria-hidden focusable="false">
+    <svg viewBox="0 0 200 200" className="size-32 text-foreground md:size-40" aria-hidden focusable="false">
       <circle cx="100" cy="100" r="96" fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="0.75" />
       {ticks.map((i) => {
         const major = i % 5 === 0;

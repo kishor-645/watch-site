@@ -42,9 +42,9 @@ export default async function HomePage() {
 
   const heroWatch = chosen ?? watches[0] ?? null;
   const heroImage = home.heroImageUrl
-    ? { url: home.heroImageUrl, alt: heroWatch?.name ?? "" }
+    ? { url: home.heroImageUrl, alt: heroWatch?.name ?? "", kind: "lifestyle" as const }
     : heroWatch?.images[0]
-      ? { url: heroWatch.images[0].url, alt: heroWatch.images[0].alt || heroWatch.name }
+      ? { url: heroWatch.images[0].url, alt: heroWatch.images[0].alt || heroWatch.name, kind: "product" as const }
       : null;
   const generalHref = generalEnquiryUrl(settings);
   const currency = { currencyCode: general.currencyCode, locale: general.locale };
@@ -67,8 +67,6 @@ export default async function HomePage() {
           heroWatch ? watchEnquiryUrl(settings, heroWatch, absoluteUrl(productPath(heroWatch.slug))) : generalHref
         }
       />
-      <TrustBar items={home.trustItems} />
-
       {watches.length > 0 ? (
         <FeaturedWatches
           title={isFallback ? "New arrivals" : home.featuredTitle}
@@ -78,13 +76,14 @@ export default async function HomePage() {
           viewAllHref={isFallback ? "/shop?sort=newest" : "/shop"}
         />
       ) : (
-        <div className={`${container} py-20`}>
+        <div className={`${container} py-section`}>
           <ShopEmpty filtered={false} whatsappHref={generalHref} />
         </div>
       )}
 
       {watches.length > 0 && <ShopByCategory categories={catalog.categories} />}
       <Story title={home.storyTitle} body={home.storyBody} imageUrl={home.storyImageUrl} />
+      <TrustBar items={home.trustItems} />
       <CtaBand title={home.ctaTitle} body={home.ctaBody} whatsappHref={generalHref} />
     </>
   );
