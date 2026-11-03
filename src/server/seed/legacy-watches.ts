@@ -1,4 +1,39 @@
-import type { Watch } from "@/lib/types";
+/** Original static catalogue (pre-database). Used only to seed the sample catalog. */
+export interface LegacyWatch {
+  id: string;
+  slug: string;
+  name: string;
+  brand: string;
+  category: string;
+  gender: "men" | "women" | "unisex";
+  movementType: string;
+  price: number;
+  compareAtPrice?: number;
+  rating?: number;
+  reviewCount?: number;
+  images: string[];
+  shortDescription: string;
+  description: string;
+  features: string[];
+  specs: {
+    caseSize: string;
+    caseMaterial: string;
+    movement: string;
+    waterResistance: string;
+    crystal: string;
+    dial: string;
+    strap: string;
+    thickness?: string;
+    lugWidth?: string;
+    powerReserve?: string;
+    warranty: string;
+  };
+  inStock: boolean;
+  isFlagship?: boolean;
+  isMostLoved?: boolean;
+  isNew?: boolean;
+  tags?: string[];
+}
 
 const img = (id: string) =>
   `https://images.unsplash.com/photo-${id}?w=1200&q=80&auto=format&fit=crop`;
@@ -42,7 +77,7 @@ const IMG = {
   darkChronoLeather: img("1622434641406-a158123450f9"),
 };
 
-export const watches: Watch[] = [
+export const legacyWatches: LegacyWatch[] = [
   // ───────────────────────────── Flagship ─────────────────────────────
   {
     id: "mw-001",
