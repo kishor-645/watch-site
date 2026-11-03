@@ -30,6 +30,8 @@ export interface CatalogFacets {
 
 export interface PublicSettings extends SiteSettings {
   updatedAt: string | null;
+  /** Stored sections that failed validation and were replaced by defaults (admin should re-save). */
+  invalidSections: string[];
 }
 
 export interface AdminProfile {

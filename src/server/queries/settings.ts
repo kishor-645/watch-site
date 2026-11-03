@@ -35,7 +35,7 @@ export function mergeSettings(defaults: SiteSettings, stored: unknown): SiteSett
 export async function loadSettings(): Promise<PublicSettings> {
   const { settings } = await getCollections();
   const doc = await settings.findOne({ _id: "global" });
-  return { ...mergeSettings(DEFAULT_SETTINGS, doc ?? {}), updatedAt: doc?.updatedAt?.toISOString() ?? null };
+  return { ...mergeSettings(DEFAULT_SETTINGS, doc ?? {}), updatedAt: doc?.updatedAt?.toISOString() ?? null, invalidSections: [] };
 }
 
 const cachedSettings = unstable_cache(loadSettings, ["site-settings-v1"], {
@@ -52,6 +52,6 @@ export const getSiteSettings = cache(async (): Promise<PublicSettings> => {
     return await cachedSettings();
   } catch (error) {
     log.error("settings.load_failed", { error });
-    return { ...DEFAULT_SETTINGS, updatedAt: null };
+    return { ...DEFAULT_SETTINGS, updatedAt: null, invalidSections: [] };
   }
 });

@@ -16,6 +16,8 @@ export interface WatchDoc extends Omit<WatchData, "slug"> {
   _id: ObjectId;
   slug: string;
   brandSlug: string;
+  /** Slugs this watch was previously published under — old URLs permanently redirect here. */
+  previousSlugs?: string[];
   createdAt: Date;
   updatedAt: Date;
   createdBy: string | null; // admin username

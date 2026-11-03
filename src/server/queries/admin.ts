@@ -107,3 +107,10 @@ export async function getAdminProfile(id: string): Promise<AdminProfile | null> 
   const doc = await admins.findOne({ _id });
   return doc ? toAdminProfile(doc) : null;
 }
+
+/** Every brand used by any watch (drafts included), for admin form suggestions. */
+export async function listAllBrands(): Promise<string[]> {
+  const { watches } = await getCollections();
+  const brands = await watches.distinct("brand");
+  return brands.filter(Boolean).sort((a, b) => a.localeCompare(b));
+}

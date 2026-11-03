@@ -148,3 +148,17 @@ export const getPublishedSlugs = unstable_cache(
   ["watches-slugs-v1"],
   opts,
 );
+
+/** Current slug of the published watch that used to live at `oldSlug` (for 308 redirects), else null. */
+export const findRedirectSlug = unstable_cache(
+  async (oldSlug: string): Promise<string | null> => {
+    const { watches } = await getCollections();
+    const doc = await watches.findOne(
+      { previousSlugs: oldSlug.toLowerCase(), published: true },
+      { projection: { slug: 1 } },
+    );
+    return doc?.slug ?? null;
+  },
+  ["watch-redirect-slug-v1"],
+  opts,
+);
